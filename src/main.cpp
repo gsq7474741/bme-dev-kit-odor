@@ -55,21 +55,21 @@
 #include "led_controller.h"
 #include "sensor_manager.h"
 //#include "ble_controller.h"
-#include <bsec2.h>
-#include "utils.h"
 #include <AliyunIoTSDK.h>
+#include <bsec2.h>
 #include "WiFi.h"
+#include "utils.h"
 
 /*! BUFF_SIZE determines the size of the buffer */
-#define BUFF_SIZE 10
+#define BUFF_SIZE     10
 
-#define PRODUCT_KEY "xxxxx"
-#define DEVICE_NAME "Device_D"
+#define PRODUCT_KEY   "xxxxx"
+#define DEVICE_NAME   "Device_D"
 #define DEVICE_SECRET "xxxxxxxxxxx"
-#define REGION_ID "cn-shanghai"
+#define REGION_ID     "cn-shanghai"
 
-#define WIFI_SSID "xxxxxx"
-#define WIFI_PASSWD "xxxxxxxx"
+#define WIFI_SSID     "xxxxxx"
+#define WIFI_PASSWD   "xxxxxxxx"
 
 /*!
  * @brief : This function is called by the BSEC library when a new output is available
@@ -176,224 +176,198 @@ demoRetCode configureBsecLogging(const String& bsecExtension, uint8_t bsecConfig
 void aliyunPowerCallback(JsonVariant p);
 
 
-uint8_t 				bsecConfig[BSEC_MAX_PROPERTY_BLOB_SIZE];
-Bsec2 					bsec2;
+uint8_t bsecConfig[BSEC_MAX_PROPERTY_BLOB_SIZE];
+Bsec2   bsec2;
 //bleController  			bleCtlr(bleMessageReceived);
-labelProvider 			labelPvr;
-ledController			ledCtlr;
-sensorManager 			sensorMgr;
-bme68xDataLogger		bme68xDlog;
-bsecDataLogger 			bsecDlog;
-demoRetCode				retCode;
-uint8_t					bsecSelectedSensor;
-String 					bme68xConfigFile, bsecConfigFile;
-demoAppMode				appMode;
-gasLabel 				label;
-bool 					isBme68xConfAvailable, isBsecConfAvailable;
-commMux					comm;
-AliyunIoTSDK iot;
-WiFiClient espClient;
+labelProvider    labelPvr;
+ledController    ledCtlr;
+sensorManager    sensorMgr;
+bme68xDataLogger bme68xDlog;
+bsecDataLogger   bsecDlog;
+demoRetCode      retCode;
+uint8_t          bsecSelectedSensor;
+String           bme68xConfigFile, bsecConfigFile;
+demoAppMode      appMode;
+gasLabel         label;
+bool             isBme68xConfAvailable, isBsecConfAvailable;
+commMux          comm;
+AliyunIoTSDK     iot;
+WiFiClient       espClient;
 
-static volatile uint8_t buffCount = 0;
+static volatile uint8_t             buffCount = 0;
 static bsecDataLogger::SensorIoData buff[BUFF_SIZE];
 
 void setup()
 {
-    Serial.begin(115200);
-    /* Datalogger Mode is set by default */
-    appMode = DEMO_DATALOGGER_MODE;
-    label = BSEC_NO_CLASS;
-    bsecSelectedSensor = 0;
+	Serial.begin(115200);
+	/* Datalogger Mode is set by default */
+	appMode            = DEMO_DATALOGGER_MODE;
+	label              = BSEC_NO_CLASS;
+	bsecSelectedSensor = 0;
 
-    /* Initializes the label provider module */
-    labelPvr.begin();
-    /* Initializes the LED controller module */
-    ledCtlr.begin();
-    /* Initializes the SD and RTC module */
-    retCode = utils::begin();
+	/* Initializes the label provider module */
+	labelPvr.begin();
+	/* Initializes the LED controller module */
+	ledCtlr.begin();
+	/* Initializes the SD and RTC module */
+	retCode = utils::begin();
 
-    if (retCode >= EDK_OK)
-    {
-        /* checks the availability of BME board configuration and BSEC configuration files */
-        isBme68xConfAvailable = utils::getFileWithExtension(bme68xConfigFile, BME68X_CONFIG_FILE_EXT);
-        isBsecConfAvailable = utils::getFileWithExtension(bsecConfigFile, BSEC_CONFIG_FILE_EXT);
+	if (retCode >= EDK_OK) {
+		/* checks the availability of BME board configuration and BSEC configuration files */
+		isBme68xConfAvailable = utils::getFileWithExtension(bme68xConfigFile, BME68X_CONFIG_FILE_EXT);
+		isBsecConfAvailable   = utils::getFileWithExtension(bsecConfigFile, BSEC_CONFIG_FILE_EXT);
 
-        if (isBme68xConfAvailable)
-        {
-            retCode = configureSensorLogging(bme68xConfigFile);
-        }
-        else
-        {
-            retCode = EDK_SENSOR_CONFIG_FILE_ERROR;
-        }
-    }
+		if (isBme68xConfAvailable) {
+			retCode = configureSensorLogging(bme68xConfigFile);
+		} else {
+			retCode = EDK_SENSOR_CONFIG_FILE_ERROR;
+		}
+	}
 
-    if (retCode >= EDK_OK)
-    {
-        /* initialize the ble controller */
-//        retCode = bleCtlr.begin();
+	if (retCode >= EDK_OK) {
+		/* initialize the ble controller */
+		//        retCode = bleCtlr.begin();
 
 
-        //Init WiFi as Station, start SmartConfig
-        WiFi.mode(WIFI_AP_STA);
-        WiFi.beginSmartConfig();
+		//Init WiFi as Station, start SmartConfig
+		WiFi.mode(WIFI_AP_STA);
+		WiFi.beginSmartConfig();
 
-        //Wait for SmartConfig packet from mobile
-        Serial.println("Waiting for SmartConfig.");
-        while (!WiFi.smartConfigDone()) {
-            delay(500);
-            Serial.print(".");
-        }
+		//Wait for SmartConfig packet from mobile
+		Serial.println("Waiting for SmartConfig.");
+		while (!WiFi.smartConfigDone()) {
+			delay(500);
+			Serial.print(".");
+		}
 
-        Serial.println("");
-        Serial.println("SmartConfig received.");
+		Serial.println("");
+		Serial.println("SmartConfig received.");
 
-        //Wait for WiFi to connect to AP
-        Serial.println("Waiting for WiFi");
-        while (WiFi.status() != WL_CONNECTED) {
-            delay(500);
-            Serial.print(".");
-        }
+		//Wait for WiFi to connect to AP
+		Serial.println("Waiting for WiFi");
+		while (WiFi.status() != WL_CONNECTED) {
+			delay(500);
+			Serial.print(".");
+		}
 
-        Serial.println("WiFi Connected.");
+		Serial.println("WiFi Connected.");
 
-        Serial.print("IP Address: ");
-        Serial.println(WiFi.localIP());
+		Serial.print("IP Address: ");
+		Serial.println(WiFi.localIP());
 
-        AliyunIoTSDK::begin(espClient, PRODUCT_KEY, DEVICE_NAME, DEVICE_SECRET, REGION_ID);
+		AliyunIoTSDK::begin(espClient, PRODUCT_KEY, DEVICE_NAME, DEVICE_SECRET, REGION_ID);
 
-        // 绑定属性回调
-        AliyunIoTSDK::bindData("PowerSwitch", aliyunPowerCallback);
-    }
+		// 绑定属性回调
+		AliyunIoTSDK::bindData("PowerSwitch", aliyunPowerCallback);
+	}
 
-    if (retCode < EDK_OK)
-    {
-        if (retCode != EDK_SD_CARD_INIT_ERROR)
-        {
-            /* creates log file and updates the error codes */
-            if (bme68xDlog.begin(bme68xConfigFile) != EDK_SD_CARD_INIT_ERROR)
-                /* Writes the sensor data to the current log file */
-                (void) bme68xDlog.writeSensorData(nullptr, nullptr, nullptr, nullptr, label, retCode);
-            /* Flushes the buffered sensor data to the current log file */
-            (void) bme68xDlog.flush();
-        }
-        appMode = DEMO_IDLE_MODE;
-    }
-    bsec2.attachCallback(bsecCallBack);
+	if (retCode < EDK_OK) {
+		if (retCode != EDK_SD_CARD_INIT_ERROR) {
+			/* creates log file and updates the error codes */
+			if (bme68xDlog.begin(bme68xConfigFile) != EDK_SD_CARD_INIT_ERROR)
+				/* Writes the sensor data to the current log file */
+				(void) bme68xDlog.writeSensorData(nullptr, nullptr, nullptr, nullptr, label, retCode);
+			/* Flushes the buffered sensor data to the current log file */
+			(void) bme68xDlog.flush();
+		}
+		appMode = DEMO_IDLE_MODE;
+	}
+	bsec2.attachCallback(bsecCallBack);
 }
 
 void loop()
 {
-    /* Updates the LED controller status */
-    ledCtlr.update(retCode);
-    if (retCode >= EDK_OK)
-    {
-//        while (bleCtlr.dequeueBleMsg());
+	/* Updates the LED controller status */
+	ledCtlr.update(retCode);
+	if (retCode >= EDK_OK) {
+		//        while (bleCtlr.dequeueBleMsg());
 
-        /* Retrieves the current label */
-        (void) labelPvr.getLabel(label);
+		/* Retrieves the current label */
+		(void) labelPvr.getLabel(label);
 
-        switch (appMode)
-        {
-            /*  Logs the bme688 sensors raw data from all 8 sensors */
-            case DEMO_DATALOGGER_MODE:
-            {
-                AliyunIoTSDK::loop();
-                uint8_t i;
+		switch (appMode) {
+			/*  Logs the bme688 sensors raw data from all 8 sensors */
+			case DEMO_DATALOGGER_MODE: {
+				AliyunIoTSDK::loop();
+				uint8_t i;
 
-                /* Schedules the next readable sensor */
-                while (sensorMgr.scheduleSensor(i))
-                {
-                    bme68x_data* sensorData[3];
-                    /* Returns the selected sensor address */
-                    bme68xSensor* sensor = sensorMgr.getSensor(i);
+				/* Schedules the next readable sensor */
+				while (sensorMgr.scheduleSensor(i)) {
+					bme68x_data* sensorData[3];
+					/* Returns the selected sensor address */
+					bme68xSensor* sensor = sensorMgr.getSensor(i);
 
-                    /* Retrieves the selected sensor data */
-                    retCode = sensorMgr.collectData(i, sensorData);
-                    if (retCode < EDK_OK)
-                    {
-                        /* Writes the sensor data to the current log file */
-                        retCode = bme68xDlog.writeSensorData(&i, &sensor->id, &sensor->mode, nullptr, label, retCode);
-                    }
-                    else
-                    {
-                        for (const auto data : sensorData)
-                        {
-                            if (data != nullptr)
-                            {
-                                retCode = bme68xDlog.writeSensorData(&i, &sensor->id, &sensor->mode, data, label, retCode);
-                            }
-                        }
-                    }
-                }
+					/* Retrieves the selected sensor data */
+					retCode = sensorMgr.collectData(i, sensorData);
+					if (retCode < EDK_OK) {
+						/* Writes the sensor data to the current log file */
+						retCode = bme68xDlog.writeSensorData(&i, &sensor->id, &sensor->mode, nullptr, label, retCode);
+					} else {
+						for (const auto data: sensorData) {
+							if (data != nullptr) {
+								retCode = bme68xDlog.writeSensorData(&i, &sensor->id, &sensor->mode, data, label, retCode);
+							}
+						}
+					}
+				}
 
-                retCode = bme68xDlog.flush();
-            }
-                break;
-                /* Example of BSEC library integration: gets the data from one out of 8 sensors
+				retCode = bme68xDlog.flush();
+			} break;
+				/* Example of BSEC library integration: gets the data from one out of 8 sensors
                    (this can be selected through application) and calls BSEC library,
                    get the outputs in app and logs the data */
-            case DEMO_BLE_STREAMING_MODE:
-            {
-                /* Callback from the user to read data from the BME688 sensors using parallel mode/forced mode,
+			case DEMO_BLE_STREAMING_MODE: {
+				/* Callback from the user to read data from the BME688 sensors using parallel mode/forced mode,
                    process and store outputs */
-                (void) bsec2.run();
-            }
-                break;
-            default:
-                break;
-        }
-    }
-    else
-    {
-        Serial.println("Error code = " + String((int) retCode));
-        while(1)
-        {
-            /* Updates the LED controller status */
-            ledCtlr.update(retCode);
-        }
-    }
+				(void) bsec2.run();
+			} break;
+			default:
+				break;
+		}
+	} else {
+		Serial.println("Error code = " + String((int) retCode));
+		while (1) {
+			/* Updates the LED controller status */
+			ledCtlr.update(retCode);
+		}
+	}
 }
 
 void bsecCallBack(const bme68x_data input, const bsecOutputs outputs, Bsec2 bsec)
 {
-//    bleNotifyBme68xData(input);
-    if (outputs.nOutputs)
-    {
-//        bleNotifyBsecOutput(outputs);
-    }
+	//    bleNotifyBme68xData(input);
+	if (outputs.nOutputs) {
+		//        bleNotifyBsecOutput(outputs);
+	}
 
-    bme68xSensor *sensor = sensorMgr.getSensor(bsecSelectedSensor); /* returns the selected sensor address */
+	bme68xSensor* sensor = sensorMgr.getSensor(bsecSelectedSensor); /* returns the selected sensor address */
 
-    if (sensor != nullptr)
-    {
-        buff[buffCount].sensorNum = bsecSelectedSensor;
-        buff[buffCount].sensorId = sensor->id;
-        buff[buffCount].sensorMode = sensor->mode;
-        buff[buffCount].inputData = input;
-        buff[buffCount].outputs = outputs;
-        buff[buffCount].label = label;
-        buff[buffCount].code = retCode;
-        buff[buffCount].timeSincePowerOn = millis();
-        buff[buffCount].rtcTsp = utils::getRtc().now().unixtime();
-        buffCount ++;
+	if (sensor != nullptr) {
+		buff[buffCount].sensorNum        = bsecSelectedSensor;
+		buff[buffCount].sensorId         = sensor->id;
+		buff[buffCount].sensorMode       = sensor->mode;
+		buff[buffCount].inputData        = input;
+		buff[buffCount].outputs          = outputs;
+		buff[buffCount].label            = label;
+		buff[buffCount].code             = retCode;
+		buff[buffCount].timeSincePowerOn = millis();
+		buff[buffCount].rtcTsp           = utils::getRtc().now().unixtime();
+		buffCount++;
 
-        if (buffCount == BUFF_SIZE)
-        {
-            retCode = bsecDlog.writeBsecOutput(buff, BUFF_SIZE);
-            buffCount = 0;
-        }
+		if (buffCount == BUFF_SIZE) {
+			retCode   = bsecDlog.writeBsecOutput(buff, BUFF_SIZE);
+			buffCount = 0;
+		}
 
 
-        if (millis() - lastMsMain >= 5000)
-        {
-            lastMsMain = millis();
-            // 发送事件到阿里云平台
-            AliyunIoTSDK::sendEvent("xxx");
-            // 发送模型属性到阿里云平台
-            AliyunIoTSDK::send("CurrentTemperature", 30);
-        }
-    }
+		if (millis() - lastMsMain >= 5000) {
+			lastMsMain = millis();
+			// 发送事件到阿里云平台
+			AliyunIoTSDK::sendEvent("xxx");
+			// 发送模型属性到阿里云平台
+			AliyunIoTSDK::send("CurrentTemperature", 30);
+		}
+	}
 }
 
 //void bleMessageReceived(const bleController::bleMsg &msg, JsonDocument& jsonDoc)
@@ -605,38 +579,32 @@ void bsecCallBack(const bme68x_data input, const bsecOutputs outputs, Bsec2 bsec
 //}
 
 
-
 demoRetCode configureSensorLogging(const String& bmeConfigFile)
 {
-    demoRetCode ret = sensorMgr.begin(bmeConfigFile);
-    if (ret >= EDK_OK)
-    {
-        ret = bme68xDlog.begin(bmeConfigFile);
-    }
-    return ret;
+	demoRetCode ret = sensorMgr.begin(bmeConfigFile);
+	if (ret >= EDK_OK) {
+		ret = bme68xDlog.begin(bmeConfigFile);
+	}
+	return ret;
 }
 
 demoRetCode configureBsecLogging(const String& bsecConfigFile, uint8_t bsecConfigStr[BSEC_MAX_PROPERTY_BLOB_SIZE])
 {
-    memset(bsecConfigStr, 0, BSEC_MAX_PROPERTY_BLOB_SIZE);
-    demoRetCode ret = bsecDlog.begin(bsecConfigFile);
-    if (ret >= EDK_OK)
-    {
-        ret = utils::getBsecConfig(bsecConfigFile, bsecConfigStr);
-    }
-    return ret;
+	memset(bsecConfigStr, 0, BSEC_MAX_PROPERTY_BLOB_SIZE);
+	demoRetCode ret = bsecDlog.begin(bsecConfigFile);
+	if (ret >= EDK_OK) {
+		ret = utils::getBsecConfig(bsecConfigFile, bsecConfigStr);
+	}
+	return ret;
 }
 
 
 void aliyunPowerCallback(JsonVariant p)
 {
-    int PowerSwitch = p["PowerSwitch"];
-    if (PowerSwitch == 1)
-    {
-        //
-    }
-    else
-    {
-        //
-    }
+	int PowerSwitch = p["PowerSwitch"];
+	if (PowerSwitch == 1) {
+		//
+	} else {
+		//
+	}
 }

@@ -54,8 +54,8 @@ ledController::ledController()
 void ledController::begin()
 {
 	/* LED pin initialization for runtime monitoring and error indication */
-    pinMode(PIN_LED, OUTPUT);
-    digitalWrite(PIN_LED, LOW);
+	pinMode(PIN_LED, OUTPUT);
+	digitalWrite(PIN_LED, LOW);
 
 	_ledOn = false;
 }
@@ -67,15 +67,11 @@ void ledController::begin()
 void ledController::switchLed(uint32_t period)
 {
 	uint32_t timeStamp = millis();
-	if ((timeStamp - _timeStamp) >= period)
-	{
-		if (_ledOn)
-		{
+	if ((timeStamp - _timeStamp) >= period) {
+		if (_ledOn) {
 			digitalWrite(PIN_LED, LOW);
 			_ledOn = false;
-		}
-		else
-		{
+		} else {
 			digitalWrite(PIN_LED, HIGH);
 			_ledOn = true;
 		}
@@ -88,13 +84,9 @@ void ledController::switchLed(uint32_t period)
  */
 void ledController::update(demoRetCode retcode)
 {
-	if (retcode >= EDK_OK)
-	{
+	if (retcode >= EDK_OK) {
 		switchLed(LED_OK_PERIOD);
-	}
-	else
-	{
+	} else {
 		switchLed(LED_ERROR_PERIOD);
 	}
 }
-

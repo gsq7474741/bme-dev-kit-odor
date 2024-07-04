@@ -55,12 +55,11 @@ bme68xDataLogger::bme68xDataLogger() : _fileCounter(0)
 demoRetCode bme68xDataLogger::begin(const String& configName)
 {
 	demoRetCode retCode = utils::begin();
-	
+
 	_configName = configName;
-	if (retCode >= EDK_OK)
-	{
+	if (retCode >= EDK_OK) {
 		retCode = createLogFile();
-		
+
 		_ss.setf(std::ios::fixed, std::ios::floatfield);
 	}
 	return retCode;
@@ -72,30 +71,25 @@ demoRetCode bme68xDataLogger::begin(const String& configName)
 demoRetCode bme68xDataLogger::flush()
 {
 	demoRetCode retCode = EDK_OK;
-	File logFile;
+	File        logFile;
 	std::string txt;
-	
-    if (_ss.rdbuf()->in_avail())
-	{
+
+	if (_ss.rdbuf()->in_avail()) {
 		txt = _ss.str();
 		_ss.str(std::string());
-		
-		if (_fileCounter && logFile.open(_logFileName.c_str(), O_RDWR | O_AT_END))
-		{
+
+		if (_fileCounter && logFile.open(_logFileName.c_str(), O_RDWR | O_AT_END)) {
 			logFile.seek(_sensorDataPos);
 			logFile.print(txt.c_str());
 			_sensorDataPos = logFile.position();
 			logFile.println("\n\t    ]\n\t}\n}");
-			
+
 			logFile.close();
-			
-			if (logFile.size() >= FILE_SIZE_LIMIT)
-			{
+
+			if (logFile.size() >= FILE_SIZE_LIMIT) {
 				retCode = createLogFile();
 			}
-		}
-		else
-		{
+		} else {
 			retCode = EDK_DATALOGGER_LOG_FILE_ERROR;
 		}
 	}
@@ -105,20 +99,25 @@ demoRetCode bme68xDataLogger::flush()
 /*!
  * @brief Function writes the sensor data to the current log file
  */
-demoRetCode bme68xDataLogger::writeSensorData(const uint8_t* num, const uint32_t* sensorId, const uint8_t* sensorMode, const bme68x_data* bme68xData, gasLabel label, demoRetCode code)
+demoRetCode bme68xDataLogger::writeSensorData(
+		const uint8_t*     num,
+		const uint32_t*    sensorId,
+		const uint8_t*     sensorMode,
+		const bme68x_data* bme68xData,
+		gasLabel           label,
+		demoRetCode        code)
 {
-	demoRetCode retCode = EDK_OK;
-    uint32_t rtcTsp = utils::getRtc().now().unixtime();
-    uint32_t timeSincePowerOn = millis();
+	demoRetCode retCode          = EDK_OK;
+	uint32_t    rtcTsp           = utils::getRtc().now().unixtime();
+	uint32_t    timeSincePowerOn = millis();
 
-	if (_endOfLine)
-	{
+	if (_endOfLine) {
 		_ss << ",\n";
 	}
 	_ss << "\t\t[";
-	(num != nullptr) ? (_ss << (int)*num) : (_ss << "null");
+	(num != nullptr) ? (_ss << (int) *num) : (_ss << "null");
 	_ss << ",";
-	(sensorId != nullptr) ? (_ss << (int)*sensorId) : (_ss << "null");
+	(sensorId != nullptr) ? (_ss << (int) *sensorId) : (_ss << "null");
 	_ss << ",";
 	_ss << timeSincePowerOn;
 	_ss << ",";
@@ -132,17 +131,17 @@ demoRetCode bme68xDataLogger::writeSensorData(const uint8_t* num, const uint32_t
 	_ss << ",";
 	(bme68xData != nullptr) ? (_ss << bme68xData->gas_resistance) : (_ss << "null");
 	_ss << ",";
-	(bme68xData != nullptr) ? (_ss << (int)bme68xData->gas_index) : (_ss << "null");
+	(bme68xData != nullptr) ? (_ss << (int) bme68xData->gas_index) : (_ss << "null");
 	_ss << ",";
-	(sensorMode != nullptr) ? (_ss << (int)(*sensorMode == BME68X_PARALLEL_MODE)) : (_ss << "null");
+	(sensorMode != nullptr) ? (_ss << (int) (*sensorMode == BME68X_PARALLEL_MODE)) : (_ss << "null");
 	_ss << ",";
-	_ss << (int)label;
+	_ss << (int) label;
 	_ss << ",";
-	_ss << (int)code;
+	_ss << (int) code;
 	_ss << "]";
 
 	_endOfLine = true;
-    return retCode;
+	return retCode;
 }
 
 /*!
@@ -150,48 +149,39 @@ demoRetCode bme68xDataLogger::writeSensorData(const uint8_t* num, const uint32_t
  */
 demoRetCode bme68xDataLogger::createLogFile()
 {
-	demoRetCode retCode = EDK_OK;
-	String macStr = utils::getMacAddress();
-    String logFileBaseName = "_Board_" + macStr + "_PowerOnOff_1_";
-	
-    _logFileName = utils::getDateTime() + logFileBaseName + utils::getFileSeed() + "_File_" + String(_fileCounter) + BME68X_RAWDATA_FILE_EXT;             
+	demoRetCode retCode         = EDK_OK;
+	String      macStr          = utils::getMacAddress();
+	String      logFileBaseName = "_Board_" + macStr + "_PowerOnOff_1_";
+
+	_logFileName =
+			utils::getDateTime() + logFileBaseName + utils::getFileSeed() + "_File_" + String(_fileCounter) + BME68X_RAWDATA_FILE_EXT;
 
 	File configFile, logFile;
-    if (_configName.length() && !configFile.open(_configName.c_str(), O_RDWR))
-	{
+	if (_configName.length() && !configFile.open(_configName.c_str(), O_RDWR)) {
 		retCode = EDK_DATALOGGER_SENSOR_CONFIG_FILE_ERROR;
-	}
-	else if (!logFile.open(_logFileName.c_str(), O_RDWR | O_CREAT))
-	{
+	} else if (!logFile.open(_logFileName.c_str(), O_RDWR | O_CREAT)) {
 		retCode = EDK_DATALOGGER_LOG_FILE_ERROR;
-	}
-	else
-	{
-		if (_configName.length())
-		{
+	} else {
+		if (_configName.length()) {
 			String lineBuffer;
 			/* read in each line from the config file and copy it to the log file */
-			while(configFile.available())
-			{
+			while (configFile.available()) {
 				lineBuffer = configFile.readStringUntil('\n');
 				/* skip the last closing curly bracket of the JSON document */
-				if (lineBuffer == "}")
-				{
+				if (lineBuffer == "}") {
 					logFile.println("\t,");
 					break;
 				}
 				logFile.println(lineBuffer);
 			}
 			configFile.close();
-		}
-		else
-		{
+		} else {
 			logFile.println("{");
 		}
 
 		/* write data header / skeleton */
 		/* raw data header */
-		logFile.println("    \"rawDataHeader\":");		
+		logFile.println("    \"rawDataHeader\":");
 		logFile.println("\t{");
 		logFile.println("\t    \"counterPowerOnOff\": 1,");
 		logFile.println("\t    \"seedPowerOnOff\": \"" + utils::getFileSeed() + "\",");
@@ -277,7 +267,7 @@ demoRetCode bme68xDataLogger::createLogFile()
 		logFile.println("\t\t    \"key\": \"error_code\"");
 		logFile.println("\t\t}");
 		logFile.println("\t    ],");
-		
+
 		/* data block */
 		logFile.println("\t    \"dataBlock\": [");
 		/* save position in file, where to write the first data set */
@@ -285,12 +275,12 @@ demoRetCode bme68xDataLogger::createLogFile()
 		logFile.println("\t    ]");
 		logFile.println("\t}");
 		logFile.println("}");
-		
+
 		/* close log file */
 		logFile.close();
-		
+
 		_endOfLine = false;
 		++_fileCounter;
 	}
-    return retCode;
+	return retCode;
 }

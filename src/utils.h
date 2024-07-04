@@ -42,74 +42,74 @@
 #ifndef DATALOGGER_UTILS_H
 #define DATALOGGER_UTILS_H
 
-#include "Arduino.h"
-#include <SdFat.h>
 #include <RTClib.h>
+#include <SdFat.h>
+#include "Arduino.h"
 #include "demo_app.h"
 
-#define BME68X_RAWDATA_FILE_EXT 		".bmerawdata"
-#define BME68X_CONFIG_FILE_EXT 			".bmeconfig"
-#define BSEC_DATA_FILE_EXT 				".bsecdata"
-#define BSEC_CONFIG_FILE_EXT 			".config"
-#define FILE_SIZE_LIMIT 				311427072
-#define TIMEZONE						2.0
-#define DATA_LOG_FILE_SEED_SIZE 		17
-#define PIN_SD_CS 						33
+#define BME68X_RAWDATA_FILE_EXT ".bmerawdata"
+#define BME68X_CONFIG_FILE_EXT  ".bmeconfig"
+#define BSEC_DATA_FILE_EXT      ".bsecdata"
+#define BSEC_CONFIG_FILE_EXT    ".config"
+#define FILE_SIZE_LIMIT         311427072
+#define TIMEZONE                2.0
+#define DATA_LOG_FILE_SEED_SIZE 17
+#define PIN_SD_CS               33
 
-class utils
-{
-private:
-	static uint64_t 	_tickMs;
-	static uint64_t 	_tickOverFlowCnt;
-	static SdFat		_sd;
-	static RTC_PCF8523 	_rtc;
-	static char 		_fileSeed[DATA_LOG_FILE_SEED_SIZE];
-	
+class utils {
+   private:
+	static uint64_t    _tickMs;
+	static uint64_t    _tickOverFlowCnt;
+	static SdFat       _sd;
+	static RTC_PCF8523 _rtc;
+	static char        _fileSeed[DATA_LOG_FILE_SEED_SIZE];
+
 	/*!
 	 * @brief : This function creates the random alphanumeric file seed for the log file
 	 */
 	static void createFileSeed();
-public:
+
+   public:
 	/*!
 	 * @brief : This function is a callback function to set the correct date for modified SD-card files
 	 */
 	static void dateTime(uint16_t* date, uint16_t* time);
-	
+
 	/*!
 	 * @brief : This function initializes the module
 	 *
 	 * @return a bosch return code
 	 */
 	static demoRetCode begin();
-	
+
 	/*!
 	 * @brief : This function retrieves the rtc handle
 	 *
 	 * @return a reference to the rtc handle
 	 */
-	static RTC_PCF8523&	getRtc();
-	
+	static RTC_PCF8523& getRtc();
+
 	/*!
 	 * @brief : This function retrieves the created file seed
 	 *
 	 * @return the created file seed (16 random alphanumerical characters)
 	 */
 	static String getFileSeed();
-	
+
 	/*!
 	 * @brief : This function creates a mac address string
 	 *
 	 * @return the mac address string
 	 */
 	static String getMacAddress();
-	
+
 	/*!
 	 * @brief : This function creates a date string
 	 *
 	 * @return the date string
 	 */
 	static String getDateTime();
-	
+
 	/*!
 	 * @brief : This function retrieves the first file with provided file extension
 	 * 
@@ -119,7 +119,7 @@ public:
 	 * @return the date string
 	 */
 	static bool getFileWithExtension(String& fName, const String& extension);
-	
+
 	/*!
 	 * @brief : This function retrives the bsec configuration string from the provided file
 	 * 
@@ -129,7 +129,7 @@ public:
 	 * @return a bosch return code
 	 */
 	static demoRetCode getBsecConfig(const String& fileName, uint8_t configStr[BSEC_MAX_PROPERTY_BLOB_SIZE]);
-	
+
 	/*!
 	 * @brief : This function returns the tick value (ms)
 	 *

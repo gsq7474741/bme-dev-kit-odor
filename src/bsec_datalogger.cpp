@@ -41,8 +41,8 @@
 
 /* own header include */
 #include "bsec_datalogger.h"
-#include <math.h>
 #include <Esp.h>
+#include <math.h>
 
 /*!
  * @brief The constructor of the bsec_datalogger class 
@@ -56,40 +56,34 @@ bsecDataLogger::bsecDataLogger() : _fileCounter(0)
 demoRetCode bsecDataLogger::begin(const String& configName)
 {
 	demoRetCode retCode = utils::begin();
-	
+
 	_bsecConfigName = configName;
-	if (retCode >= EDK_OK)
-	{
+	if (retCode >= EDK_OK) {
 		retCode = createBsecFile();
 	}
 	return retCode;
 }
- 
+
 /*!
  * @brief This function creates a bsec output file
  */
 demoRetCode bsecDataLogger::createBsecFile()
 {
-	String macStr = utils::getMacAddress();
+	String  macStr = utils::getMacAddress();
 	uint8_t configStr[BSEC_MAX_PROPERTY_BLOB_SIZE];
-	
-	demoRetCode retCode = utils::getBsecConfig(_bsecConfigName, configStr);
-    String bsecFileBaseName = "_Board_" + macStr + "_PowerOnOff_1_";
-	
-    _bsecFileName = utils::getDateTime() + bsecFileBaseName + utils::getFileSeed() + "_File_" + 
-														String(_fileCounter) + BSEC_DATA_FILE_EXT;
-	
-	if (retCode == EDK_OK)
-	{
+
+	demoRetCode retCode          = utils::getBsecConfig(_bsecConfigName, configStr);
+	String      bsecFileBaseName = "_Board_" + macStr + "_PowerOnOff_1_";
+
+	_bsecFileName = utils::getDateTime() + bsecFileBaseName + utils::getFileSeed() + "_File_" + String(_fileCounter) + BSEC_DATA_FILE_EXT;
+
+	if (retCode == EDK_OK) {
 		File logFile;
-		if (!logFile.open(_bsecFileName.c_str(), O_RDWR | O_CREAT))
-		{
+		if (!logFile.open(_bsecFileName.c_str(), O_RDWR | O_CREAT)) {
 			retCode = EDK_DATALOGGER_LOG_FILE_ERROR;
-		}
-		else 
-		{
+		} else {
 			String base64ConfigStr = base64::encode(configStr, BSEC_MAX_PROPERTY_BLOB_SIZE);
-			
+
 			logFile.println("{");
 			logFile.println("    \"bsecBase64ConfigString\": \"" + base64ConfigStr + "\",");
 			logFile.println("    \"bsecDataHeader\":");
@@ -220,7 +214,7 @@ demoRetCode bsecDataLogger::createBsecFile()
 			logFile.println("\t\t    \"key\": \"iaqAccuracy\"");
 			logFile.println("\t\t}");
 			logFile.println("\t    ],");
-			
+
 			/* data block */
 			logFile.println("\t    \"dataBlock\": [");
 			/* save position in file, where to write the first data set */
@@ -228,15 +222,15 @@ demoRetCode bsecDataLogger::createBsecFile()
 			logFile.println("\t    ]");
 			logFile.println("\t}");
 			logFile.println("}");
-			
+
 			/* close log file */
 			logFile.close();
-			
+
 			_firstLine = true;
 			++_fileCounter;
 		}
 	}
-    return retCode;
+	return retCode;
 }
 
 /*!
@@ -245,46 +239,40 @@ demoRetCode bsecDataLogger::createBsecFile()
 demoRetCode bsecDataLogger::writeBsecOutput(SensorIoData buffData[], uint8_t buffSize)
 {
 	demoRetCode retCode = EDK_OK;
-		    
+
 	File logFile;
-	
-	if (_fileCounter && logFile.open(_bsecFileName.c_str(), O_RDWR | O_AT_END))
-	{
-		if (buffData != NULL) 
-		{
+
+	if (_fileCounter && logFile.open(_bsecFileName.c_str(), O_RDWR | O_AT_END)) {
+		if (buffData != NULL) {
 			/* set writing position to end of data block */
 			logFile.seek(_bsecDataPos);
-			
-			for (uint8_t j = 0; j < buffSize; j++)
-			{
-				float gasSignal[4] = {NAN, NAN, NAN, NAN}, iaqSignal = NAN; 
-				uint8_t iaqAccuracy = 0xFF, gasAccuracy = 0xFF; 
-				
-				for (uint8_t i = 0; ((buffData[j].outputs).output != nullptr) && (i < (buffData[j].outputs).nOutputs); i++) 
-				{
+
+			for (uint8_t j = 0; j < buffSize; j++) {
+				float   gasSignal[4] = {NAN, NAN, NAN, NAN}, iaqSignal = NAN;
+				uint8_t iaqAccuracy = 0xFF, gasAccuracy = 0xFF;
+
+				for (uint8_t i = 0; ((buffData[j].outputs).output != nullptr) && (i < (buffData[j].outputs).nOutputs); i++) {
 					const bsec_output_t& output = (buffData[j].outputs).output[i];
-					switch (output.sensor_id) 
-					{
+					switch (output.sensor_id) {
 						case BSEC_OUTPUT_GAS_ESTIMATE_1:
 						case BSEC_OUTPUT_GAS_ESTIMATE_2:
 						case BSEC_OUTPUT_GAS_ESTIMATE_3:
 						case BSEC_OUTPUT_GAS_ESTIMATE_4:
 							gasSignal[output.sensor_id - BSEC_OUTPUT_GAS_ESTIMATE_1] = output.signal;
 							gasAccuracy = (output.accuracy > gasAccuracy) ? gasAccuracy : output.accuracy;
-						break;
+							break;
 						case BSEC_OUTPUT_IAQ:
-							iaqSignal = output.signal;
+							iaqSignal   = output.signal;
 							iaqAccuracy = output.accuracy;
-						break;
+							break;
 						default:
-						break;
+							break;
 					}
 				}
-				
-				if (!_firstLine)
-				{
+
+				if (!_firstLine) {
 					logFile.println(",");
-				}		
+				}
 				logFile.print("\t\t[");
 				logFile.print(buffData[j].sensorNum);
 				logFile.print(",");
@@ -324,21 +312,17 @@ demoRetCode bsecDataLogger::writeBsecOutput(SensorIoData buffData[], uint8_t buf
 				logFile.print(",");
 				(iaqAccuracy != 0xFF) ? logFile.print(iaqAccuracy) : logFile.print("null");
 				logFile.print("]");
-				
+
 				_bsecDataPos = logFile.position();
-				_firstLine = false;
+				_firstLine   = false;
 			}
 			logFile.println("\n\t    ]\n\t}\n}");
-		}
-		else
-		{
+		} else {
 			retCode = EDK_BUFFER_DATA_ERROR;
 		}
 		logFile.close();
-	}
-	else 
-	{
+	} else {
 		retCode = EDK_DATALOGGER_LOG_FILE_ERROR;
 	}
-    return retCode;	
+	return retCode;
 }

@@ -44,41 +44,40 @@
 
 /* Include of Arduino Core */
 #include <Arduino.h>
-#include <SdFat.h>
-#include <RTClib.h>
 #include <ArduinoJson.h>
+#include <RTClib.h>
 #include <SPI.h>
+#include <SdFat.h>
 #include <Wire.h>
-#include "utils.h"
-#include "demo_app.h"
 #include <bme68xLibrary.h>
 #include "commMux.h"
+#include "demo_app.h"
+#include "utils.h"
 
 /* I2C-Expander masks */
-#define I2C_EXPANDER_ADDR 				0x20
-#define I2C_EXPANDER_OUTPUT_REG_ADDR 	0x01
-#define I2C_EXPANDER_CONFIG_REG_ADDR 	0x03
-#define I2C_EXPANDER_CONFIG_REG_MASK 	0x00
-#define SPI_COMM_SPEED 					4000000
-#define NUM_BME68X_UNITS				8	
-#define HEATER_TIME_BASE				140
-#define MAX_HEATER_DURATION				200
-#define GAS_WAIT_SHARED					UINT8_C(140)
+#define I2C_EXPANDER_ADDR            0x20
+#define I2C_EXPANDER_OUTPUT_REG_ADDR 0x01
+#define I2C_EXPANDER_CONFIG_REG_ADDR 0x03
+#define I2C_EXPANDER_CONFIG_REG_MASK 0x00
+#define SPI_COMM_SPEED               4000000
+#define NUM_BME68X_UNITS             8
+#define HEATER_TIME_BASE             140
+#define MAX_HEATER_DURATION          200
+#define GAS_WAIT_SHARED              UINT8_C(140)
 /* Size of Json document in bytes */
-#define JSON_DOC_SIZE 					5000
+#define JSON_DOC_SIZE                5000
 
 /*!
  * @brief : Class library that holds the functionality of the sensor manager
  */
-class sensorManager
-{
-private:
-	static bme68xSensor 		_sensors[NUM_BME68X_UNITS];
-	Bme68x 						bme68xSensors[NUM_BME68X_UNITS];
-	bme68x_data 				_fieldData[3];
+class sensorManager {
+   private:
+	static bme68xSensor _sensors[NUM_BME68X_UNITS];
+	Bme68x              bme68xSensors[NUM_BME68X_UNITS];
+	bme68x_data         _fieldData[3];
 
-	StaticJsonDocument<JSON_DOC_SIZE>	_configDoc;
-	
+	StaticJsonDocument<JSON_DOC_SIZE> _configDoc;
+
 	/*!
 	 * @brief : This function initializes the given BME688 sensor
 	 * 
@@ -98,8 +97,9 @@ private:
      * 
      * @return  bme68x return code
 	 */
-	int8_t setHeaterProfile(const String& heaterProfileStr, const String& dutyCycleStr, bme68xHeaterProfile& heaterProfile, uint8_t sensorNumber);
-	
+	int8_t setHeaterProfile(
+			const String& heaterProfileStr, const String& dutyCycleStr, bme68xHeaterProfile& heaterProfile, uint8_t sensorNumber);
+
 	/*!
 	 * @brief : This function configures the bme688 sensor
 	 * 
@@ -109,7 +109,8 @@ private:
      * @return  bme68x return code
 	 */
 	int8_t configureSensor(bme68xHeaterProfile& heaterProfile, uint8_t sensorNumber);
-public:
+
+   public:
 	/*!
 	 * @brief : This function retrieves the selected sensor.
 	 * 
@@ -117,16 +118,15 @@ public:
      * 
      * @return  Pointer to sensor if it exists, else nullptr
 	 */
-    static inline bme68xSensor* getSensor(uint8_t num)
+	static inline bme68xSensor* getSensor(uint8_t num)
 	{
 		bme68xSensor* sensor = nullptr;
-		if(num < NUM_BME68X_UNITS)
-		{
+		if (num < NUM_BME68X_UNITS) {
 			sensor = &_sensors[num];
 		}
 		return sensor;
 	};
-	
+
 	/*!
 	 * @brief : This function selects next readable bme688 sensor in given operation mode
 	 * 
@@ -137,23 +137,20 @@ public:
 	 */
 	static inline bool selectNextSensor(uint64_t& wakeUpTime, uint8_t& num, uint8_t mode)
 	{
-		num = (uint8_t)0xFF;
-		for (uint8_t i = 0; i < NUM_BME68X_UNITS; i++)
-		{
-			if ((_sensors[i].mode == mode) && (_sensors[i].wakeUpTime < wakeUpTime))
-			{
+		num = (uint8_t) 0xFF;
+		for (uint8_t i = 0; i < NUM_BME68X_UNITS; i++) {
+			if ((_sensors[i].mode == mode) && (_sensors[i].wakeUpTime < wakeUpTime)) {
 				wakeUpTime = _sensors[i].wakeUpTime;
-				num = i;
+				num        = i;
 			}
 		}
-		
-		if (num < NUM_BME68X_UNITS)
-		{
+
+		if (num < NUM_BME68X_UNITS) {
 			return true;
 		}
 		return false;
 	}
-	
+
 	/*!
 	 * @brief : This function schedules the next readable bme688 sensor
 	 * 
@@ -166,19 +163,19 @@ public:
 		uint64_t wakeUpTime = utils::getTickMs() + 20;
 		return (selectNextSensor(wakeUpTime, num, BME68X_PARALLEL_MODE) || selectNextSensor(wakeUpTime, num, BME68X_SLEEP_MODE));
 	};
-	
-    /*!
+
+	/*!
      * @brief : The constructor of the sensorManager class
      *        	Creates an instance of the class
      */
-    sensorManager();
-	
+	sensorManager();
+
 	/*!
      * @brief : This function initializes all bme688 sensors. It does not configure the sensor manager for data collection, 
 	 *		 	the begin function should be used instead for this purpose.
      */
 	demoRetCode initializeAllSensors();
-	
+
 	/*!
 	 * @brief : This function configures the sensor manager using the provided config file.
 	 * 
@@ -186,8 +183,8 @@ public:
      * 
      * @return  error code
 	 */
-    demoRetCode begin(const String& config);
-	
+	demoRetCode begin(const String& config);
+
 	/*!
 	 * @brief : This function retrieves the selected sensor data.
 	 * 
@@ -196,7 +193,7 @@ public:
      * 
      * @return  error code
 	 */
-    demoRetCode collectData(uint8_t num, bme68x_data* data[3]);
+	demoRetCode collectData(uint8_t num, bme68x_data* data[3]);
 };
 
 #endif

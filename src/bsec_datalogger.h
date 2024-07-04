@@ -43,26 +43,25 @@
 #define BSEC_DATALOGGER_H
 
 /* Include of Arduino Core */
-#include "Arduino.h"
 #include <SdFat.h>
+#include "Arduino.h"
 
 #include <RTClib.h>
 #include <base64.h>
-#include "utils.h"
 #include "demo_app.h"
 #include "label_provider.h"
+#include "utils.h"
 
 /*!
  * @brief Class library that holds functionality of the bsec datalogger
  */
-class bsecDataLogger
-{
-private:
-	String _bsecConfigName, _bsecFileName;
+class bsecDataLogger {
+   private:
+	String        _bsecConfigName, _bsecFileName;
 	unsigned long _bsecDataPos = 0;
-    int _fileCounter = 0;
-	bool _firstLine = false;
-	
+	int           _fileCounter = 0;
+	bool          _firstLine   = false;
+
 	/*!
 	 * @brief : This function creates a bsec output file
 	 * 
@@ -70,47 +69,46 @@ private:
 	 */
 	demoRetCode createBsecFile();
 
-public:
-/*!
+   public:
+	/*!
  * @brief structure which comprises sensor input and output data to write into SD card
  */
-    typedef struct
-    {
+	typedef struct {
 		/*! sensor number */
-    	uint8_t sensorNum;
-    
-    	/*! sensor Index */
+		uint8_t sensorNum;
+
+		/*! sensor Index */
 		uint32_t sensorId;
-    
-  		/*! sensor mode */
+
+		/*! sensor mode */
 		uint8_t sensorMode;
-    
-    	/*! bme68x data registers data */
+
+		/*! bme68x data registers data */
 		bme68x_data inputData;
-	    
-    	/*! bsec output structure*/
-    	bsecOutputs outputs;
-    
+
+		/*! bsec output structure*/
+		bsecOutputs outputs;
+
 		/*! gas label */
-    	gasLabel label;
-	
-    	/*! return code */
-    	demoRetCode code;
-		
+		gasLabel label;
+
+		/*! return code */
+		demoRetCode code;
+
 		/*! time since power on */
-    	uint32_t timeSincePowerOn;
-		
+		uint32_t timeSincePowerOn;
+
 		/*! rtc time */
-		uint32_t rtcTsp; 
-		
+		uint32_t rtcTsp;
+
 	} SensorIoData;
-	
+
 	/*!
      * @brief :The constructor of the bsec_datalogger class
      *         Creates an instance of the class
      */
-    bsecDataLogger();
-	
+	bsecDataLogger();
+
 	/*!
 	 * @brief : This function configures the bsec datalogger using the provided bsec config string file.
 	 * 
@@ -118,7 +116,7 @@ public:
      * 
      * @return  bosch error code
 	 */
-    demoRetCode begin(const String& configName);
+	demoRetCode begin(const String& configName);
 
 	/*!
 	 * @brief : This function writes the block of bsec output to the current log file.
@@ -128,8 +126,8 @@ public:
      * 
 	 * @return bosch error code
 	 */
-	
-    demoRetCode writeBsecOutput(SensorIoData buffData[], uint8_t buffSize);
+
+	demoRetCode writeBsecOutput(SensorIoData buffData[], uint8_t buffSize);
 };
 
 #endif

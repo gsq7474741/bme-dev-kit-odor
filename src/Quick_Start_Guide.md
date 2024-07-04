@@ -8,35 +8,37 @@ Follow the Installation and getting started in the [README.md](../../README.md).
 
 1. Install the following Arduino libraries under Sketch->Include Library->Manage Libraries
 
-	- ArduinoJson (tested for 6.19.4 by Benoit Blanchon)
+    - ArduinoJson (tested for 6.19.4 by Benoit Blanchon)
 
-	- RTClib (tested for 2.0.3 by Adafruit)
+    - RTClib (tested for 2.0.3 by Adafruit)
 
-    	- Click OK, when asked to install needed dependencies
+        - Click OK, when asked to install needed dependencies
 
-	- SdFat (tested for 2.1.2 by Bill Greiman)
+    - SdFat (tested for 2.1.2 by Bill Greiman)
 
 2. Open the 'bme68x_demo_sample.ino' file from the path - Bosch_BSEC2_Library/examples/bme68x_demo_sample
 
 3. Connect your board via USB
 
-	- Select "Adafruit ESP32 Feather" in the Arduino IDE under Tools->Board
+    - Select "Adafruit ESP32 Feather" in the Arduino IDE under Tools->Board
 
-	- Select your COM Port under Tools->Port
+    - Select your COM Port under Tools->Port
 
 5. Upload the firmware
 
-	- If you have a coin cell (CR1220) for the RTC, make sure it is inserted before flashing the board
+    - If you have a coin cell (CR1220) for the RTC, make sure it is inserted before flashing the board
 
-	- When the board is flashed, don't unmount the coin cell, if not necessary
+    - When the board is flashed, don't unmount the coin cell, if not necessary
 
 5. Wait for the board to be flashed and then disconnect it
 
-	- Last line in the Arduino command line should be: "Hard resetting via RTS pin..."
+    - Last line in the Arduino command line should be: "Hard resetting via RTS pin..."
 
-6. To start the data logging, insert an SD-card with a '.bmeconfig file' in it (generated using BME AI studio) and connect power supply
-  
-7. A red LED blinking with 1Hz indicates a successful data logging, a faster blinking indicates an error during the initialization (RTC, SD or Bluetooth)
+6. To start the data logging, insert an SD-card with a '.bmeconfig file' in it (generated using BME AI studio) and
+   connect power supply
+
+7. A red LED blinking with 1Hz indicates a successful data logging, a faster blinking indicates an error during the
+   initialization (RTC, SD or Bluetooth)
 
 ## Additional Note
 
@@ -62,16 +64,24 @@ The example code will primarily operate in two modes-
 - After successfully flashing the firmware, "DEMO_DATALOGGER_MODE" is the default mode set in the example.
 
 - An initial check for the availability of sensor board configuration file (.bmeconfig) inside SD card
-is performed.
+  is performed.
 
-- For DEMO_DATALOGGER_MODE, once .bmeconfig file has been detected, it will initialize and set the heater profiles for all the bme688 sensors with the provided configuration and create bme68x datalogger output file (with '.bmerawdata' extension).
+- For DEMO_DATALOGGER_MODE, once .bmeconfig file has been detected, it will initialize and set the heater profiles for
+  all the bme688 sensors with the provided configuration and create bme68x datalogger output file (with '.bmerawdata'
+  extension).
 
-- Until the user connects the board to the BME688 demo application through Bluetooth LE, it will continuously collect the data in DEMO_DATALOGGER_MODE.
+- Until the user connects the board to the BME688 demo application through Bluetooth LE, it will continuously collect
+  the data in DEMO_DATALOGGER_MODE.
 
-- When it comes to 'DEMO_BLE_STREAMING_MODE' (connecting over bluetooth), initialization of sensor and BSEC library is undertaken.
+- When it comes to 'DEMO_BLE_STREAMING_MODE' (connecting over bluetooth), initialization of sensor and BSEC library is
+  undertaken.
 
-- Furthermore, configuring with the BSEC config file (generated out of training through BME AI Studio or a default configuration from the BSEC website release package) and subscribing for the desired virtual outputs with the supported sample rate is complete, an output data file is created with the '.bsecdata' extension.
+- Furthermore, configuring with the BSEC config file (generated out of training through BME AI Studio or a default
+  configuration from the BSEC website release package) and subscribing for the desired virtual outputs with the
+  supported sample rate is complete, an output data file is created with the '.bsecdata' extension.
 
-- While the bluetooth connection is active, it will continue to operate in the 'DEMO_BLE_STREAMING_MODE' and collect the sensor data from one of the sensors in the board for processing and stores the outputs in the output datalog file.
+- While the bluetooth connection is active, it will continue to operate in the 'DEMO_BLE_STREAMING_MODE' and collect the
+  sensor data from one of the sensors in the board for processing and stores the outputs in the output datalog file.
 
-- Once bluetooth is disconnected, the device switches to the 'DEMO_DATALOGGER_MODE', where the data is logged into a new  output file (.bmerawdata).
+- Once bluetooth is disconnected, the device switches to the 'DEMO_DATALOGGER_MODE', where the data is logged into a new
+  output file (.bmerawdata).

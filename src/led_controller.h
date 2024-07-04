@@ -48,19 +48,18 @@
 
 #include "demo_app.h"
 
-#define PIN_LED 			13
-#define LED_ERROR_PERIOD	100
-#define LED_OK_PERIOD		1000
+#define PIN_LED          13
+#define LED_ERROR_PERIOD 100
+#define LED_OK_PERIOD    1000
 
 /*!
  * @brief : Class library that holds functionality of the led controller
  */
-class ledController
-{
-private:
-	bool _ledOn = false;
+class ledController {
+   private:
+	bool     _ledOn     = false;
 	uint32_t _timeStamp = 0;
-	
+
 	/*!
 	 * @brief : This function updates the led blinking pattern according to
 	 *			the provided period.
@@ -69,13 +68,13 @@ private:
 	 */
 	void switchLed(uint32_t period);
 
-public:
-    /*!
+   public:
+	/*!
      * @brief : The constructor of the led_controller class
      *        	Creates an instance of the class
      */
-    ledController();
-	
+	ledController();
+
 	/*!
      * @brief : This function initializes the led controller module
      */
@@ -88,7 +87,7 @@ public:
 	 *
 	 * @param[in] retCode : error code
 	 */
-    void update(demoRetCode retCode);
+	void update(demoRetCode retCode);
 };
 
 #endif

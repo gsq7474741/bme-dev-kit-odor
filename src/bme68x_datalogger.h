@@ -43,40 +43,40 @@
 #define BME68X_DATALOGGER_H
 
 /* Include of Arduino Core */
-#include "Arduino.h"
-#include <SdFat.h>
 #include <RTClib.h>
+#include <SdFat.h>
 #include <base64.h>
-#include "utils.h"
+#include <sstream>
+#include "Arduino.h"
 #include "demo_app.h"
 #include "label_provider.h"
-#include <sstream>
+#include "utils.h"
 
 /*!
  * @brief : Class library that holds functionality of the bme68x datalogger
  */
-class bme68xDataLogger
-{
-private:
-	String _configName, _logFileName;
+class bme68xDataLogger {
+   private:
+	String            _configName, _logFileName;
 	std::stringstream _ss;
-	unsigned long _sensorDataPos = 0;
-    int _fileCounter = 0;
-    bool _endOfLine = false;
-		
+	unsigned long     _sensorDataPos = 0;
+	int               _fileCounter   = 0;
+	bool              _endOfLine     = false;
+
 	/*!
 	 * @brief : This function creates a bme68x datalogger output file with .bmerawdata extension
 	 * 
      * @return  bosch error code
 	 */
 	demoRetCode createLogFile();
-public:
-    /*!
+
+   public:
+	/*!
      * @brief : The constructor of the bme68xDataLogger class
      *        	Creates an instance of the class
      */
-    bme68xDataLogger();
-	
+	bme68xDataLogger();
+
 	/*!
 	 * @brief : This function configures the datalogger using the provided sensor config file
 	 * 
@@ -84,15 +84,15 @@ public:
      * 
      * @return  bosch error code
 	 */
-    demoRetCode begin(const String& configName = "");
-	
+	demoRetCode begin(const String& configName = "");
+
 	/*!
 	 * @brief : This function flushes the buffered sensor data to the current log file
 	 * 
      * @return  bosch error code
 	 */
 	demoRetCode flush();
-	
+
 	/*!
 	 * @brief : This function writes the sensor data to the current log file.
 	 * 
@@ -105,8 +105,13 @@ public:
      * 
      * @return  bosch error code
 	 */
-    demoRetCode writeSensorData(const uint8_t* num, const uint32_t* sensorId, const uint8_t* sensorMode, 
-												const bme68x_data* bme68xData, gasLabel label, demoRetCode code);
+	demoRetCode writeSensorData(
+			const uint8_t*     num,
+			const uint32_t*    sensorId,
+			const uint8_t*     sensorMode,
+			const bme68x_data* bme68xData,
+			gasLabel           label,
+			demoRetCode        code);
 };
 
 #endif

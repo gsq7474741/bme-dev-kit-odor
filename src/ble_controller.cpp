@@ -42,17 +42,17 @@
 /* own header include */
 #include "ble_controller.h"
 
-bleController::bleCmd		bleController::cmdList[] = {
-    {"setlabel", &bleController::parseCmdSetLabel, bleController::SET_LABEL},
-	{"getlabel", &bleController::parseCmdGetLabel, bleController::GET_LABEL},
-	{"setrtctime", &bleController::parseCmdSetRtcTime, bleController::SET_RTC_TIME},
-	{"getrtctime", &bleController::parseCmdGetRtcTime, bleController::GET_RTC_TIME},
-	{"start", &bleController::parseCmdStartStreaming, bleController::START_STREAMING},
-	{"stop", &bleController::parseCmdStopStreaming, bleController::STOP_STREAMING},
+bleController::bleCmd bleController::cmdList[] = {
+		{  "setlabel",       &bleController::parseCmdSetLabel,       bleController::SET_LABEL},
+		{  "getlabel",       &bleController::parseCmdGetLabel,       bleController::GET_LABEL},
+		{"setrtctime",     &bleController::parseCmdSetRtcTime,    bleController::SET_RTC_TIME},
+		{"getrtctime",     &bleController::parseCmdGetRtcTime,    bleController::GET_RTC_TIME},
+		{     "start", &bleController::parseCmdStartStreaming, bleController::START_STREAMING},
+		{      "stop",  &bleController::parseCmdStopStreaming,  bleController::STOP_STREAMING},
 };
 
-QueueHandle_t 			bleController::msgQueue = nullptr; 
-BLECharacteristic		*bleController::bleCharTx = nullptr, *bleController::bleCharRx = nullptr;
+QueueHandle_t      bleController::msgQueue  = nullptr;
+BLECharacteristic *bleController::bleCharTx = nullptr, *bleController::bleCharRx = nullptr;
 
 /*!
  * @brief bleController class Constructor
@@ -66,32 +66,26 @@ bleController::bleController(bleCallBack callBack) : _callBack(callBack)
 demoRetCode bleController::begin()
 {
 	demoRetCode retCode = EDK_OK;
-	
+
 	msgQueue = xQueueCreate(BLE_MSG_QUEUE_LEN, sizeof(bleMsg));
-	
+
 	/* Initialize BLE with Device name */
-    BLEDevice::init("BME688 Development Kit");
-    /* Create Server */
-    BLEServer *pServer = BLEDevice::createServer();
-    /* Create UART Service */
-    BLEService *pService = pServer->createService(SERVICE_UUID);
-    /* add characteristics for transmitting and receiving */
-    bleCharTx = pService->createCharacteristic(
-                        CHARACTERISTIC_UUID_TX,
-                        BLECharacteristic::PROPERTY_NOTIFY
-                      );         
-    bleCharTx->addDescriptor(new BLE2902());
-	
-    bleCharRx = pService->createCharacteristic(
-						 CHARACTERISTIC_UUID_RX,
-						 BLECharacteristic::PROPERTY_WRITE
-					   );
-    /* set callback functions */
-    bleCharRx->setCallbacks(this);
-    /* start advertising */
-    pService->start();
-    pServer->getAdvertising()->start();
-	
+	BLEDevice::init("BME688 Development Kit");
+	/* Create Server */
+	BLEServer* pServer = BLEDevice::createServer();
+	/* Create UART Service */
+	BLEService* pService = pServer->createService(SERVICE_UUID);
+	/* add characteristics for transmitting and receiving */
+	bleCharTx = pService->createCharacteristic(CHARACTERISTIC_UUID_TX, BLECharacteristic::PROPERTY_NOTIFY);
+	bleCharTx->addDescriptor(new BLE2902());
+
+	bleCharRx = pService->createCharacteristic(CHARACTERISTIC_UUID_RX, BLECharacteristic::PROPERTY_WRITE);
+	/* set callback functions */
+	bleCharRx->setCallbacks(this);
+	/* start advertising */
+	pService->start();
+	pServer->getAdvertising()->start();
+
 	return retCode;
 }
 
@@ -103,12 +97,11 @@ bleController::cmdStatus bleController::parseCmdGetRtcTime(std::stringstream& ss
 bleController::cmdStatus bleController::parseCmdSetRtcTime(std::stringstream& ss, bleMsg& msg)
 {
 	uint32_t rtc;
-	if (ss >> rtc)
-	{
+	if (ss >> rtc) {
 		msg.rtcTime = rtc;
 		return CMD_VALID;
 	}
-    return CMD_INVALID;
+	return CMD_INVALID;
 }
 
 bleController::cmdStatus bleController::parseCmdGetLabel(std::stringstream& ss, bleMsg& msg)
@@ -119,38 +112,33 @@ bleController::cmdStatus bleController::parseCmdGetLabel(std::stringstream& ss, 
 bleController::cmdStatus bleController::parseCmdSetLabel(std::stringstream& ss, bleMsg& msg)
 {
 	int label;
-	if (ss >> label)
-	{
+	if (ss >> label) {
 		msg.label = static_cast<uint8_t>(label);
 		return CMD_VALID;
 	}
-    return CMD_INVALID;
+	return CMD_INVALID;
 }
 
 bleController::cmdStatus bleController::parseCmdStartStreaming(std::stringstream& ss, bleMsg& msg)
 {
 	int sensorNum, sampleRate, outputId;
-	if (ss >> sensorNum)
-	{
+	if (ss >> sensorNum) {
 		msg.bsec.selectedSensor = static_cast<uint8_t>(sensorNum);
-		if (ss >> sampleRate)
-		{
+		if (ss >> sampleRate) {
 			msg.bsec.sampleRate = static_cast<uint8_t>(sampleRate);
-			msg.bsec.len = 0;
-			
-			while ((msg.bsec.len < BSEC_NUMBER_OUTPUTS) && (ss >> outputId))
-			{
+			msg.bsec.len        = 0;
+
+			while ((msg.bsec.len < BSEC_NUMBER_OUTPUTS) && (ss >> outputId)) {
 				msg.bsec.outputId[msg.bsec.len++] = static_cast<uint8_t>(outputId);
 			}
-			
-			if (ss >> outputId)
-			{
+
+			if (ss >> outputId) {
 				return BSEC_OUTPUT_EXCESS_ERROR;
-			}	
+			}
 			return CMD_VALID;
 		}
 	}
-    return CMD_INVALID;
+	return CMD_INVALID;
 }
 
 bleController::cmdStatus bleController::parseCmdStopStreaming(std::stringstream& ss, bleMsg& msg)
@@ -162,40 +150,33 @@ bleController::cmdStatus bleController::parseCmdStopStreaming(std::stringstream&
  * @brief function gets called when data is received from a bluetooth device.
  * 		  It will read in the sent bluetooth command
  */
-void bleController::onWrite(BLECharacteristic *pCharacteristic)
+void bleController::onWrite(BLECharacteristic* pCharacteristic)
 {
-    std::string rxValue = pCharacteristic->getValue(), cmdName;
+	std::string       rxValue = pCharacteristic->getValue(), cmdName;
 	std::stringstream ss(rxValue);
-	cmdStatus status = CMD_INVALID;
-	bleMsg msg;
-	
-	if (ss >> cmdName)
-	{
+	cmdStatus         status = CMD_INVALID;
+	bleMsg            msg;
+
+	if (ss >> cmdName) {
 		StaticJsonDocument<BLE_JSON_DOC_SIZE> jsonDoc;
-		
-		for (auto& cmd : cmdList)
-		{
-			if (cmdName == cmd.name)
-			{
+
+		for (auto& cmd: cmdList) {
+			if (cmdName == cmd.name) {
 				status = cmd.parse(ss, msg);
-				if (status == CMD_VALID)
-				{
+				if (status == CMD_VALID) {
 					msg.name = cmd.name;
-					msg.id = cmd.id;
-					
-					if (xQueueSendFromISR(msgQueue, (const void*)&msg, 0) == pdPASS)
-					{
+					msg.id   = cmd.id;
+
+					if (xQueueSendFromISR(msgQueue, (const void*) &msg, 0) == pdPASS) {
 						return;
-					}
-					else
-					{
+					} else {
 						status = CONTROLLER_QUEUE_FULL;
 					}
 				}
 				break;
 			}
 		}
-		
+
 		jsonDoc[cmdName.c_str()] = status;
 		sendNotification(jsonDoc);
 	}
@@ -208,15 +189,13 @@ void bleController::onWrite(BLECharacteristic *pCharacteristic)
 bool bleController::dequeueBleMsg(void)
 {
 	bleMsg msg;
-	if (xQueueReceive(msgQueue, &msg, 0) == pdPASS)
-	{
+	if (xQueueReceive(msgQueue, &msg, 0) == pdPASS) {
 		StaticJsonDocument<BLE_JSON_DOC_SIZE> jsonDoc;
-		if (_callBack != nullptr)
-		{
+		if (_callBack != nullptr) {
 			_callBack(msg, jsonDoc);
-		
+
 			sendNotification(jsonDoc);
-		}		
+		}
 		return true;
 	}
 	return false;
@@ -228,22 +207,20 @@ bool bleController::dequeueBleMsg(void)
 void bleController::sendNotification(JsonDocument& jsonDoc)
 {
 	String notif, msg;
-	
+
 	serializeJson(jsonDoc, notif);
-	
+
 	size_t notLen = notif.length(), beginMsg = 0, endMsg = BLE_CONTROLLER_NOTIF_SIZE;
-	while (beginMsg < notLen)
-	{
-		if (endMsg > notLen)
-		{
+	while (beginMsg < notLen) {
+		if (endMsg > notLen) {
 			endMsg = notLen;
 		}
 		msg = notif.substring(beginMsg, endMsg);
-		
+
 		beginMsg += BLE_CONTROLLER_NOTIF_SIZE;
 		endMsg += BLE_CONTROLLER_NOTIF_SIZE;
-		
-		bleCharTx->setValue((const char*)msg.c_str());
+
+		bleCharTx->setValue((const char*) msg.c_str());
 		bleCharTx->notify();
 	}
 }

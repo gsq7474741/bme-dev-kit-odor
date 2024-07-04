@@ -33,23 +33,23 @@
  * @file	label_provider.h
  * @date	22 June 2022
  * @version	1.5.5
- * 
+ *
  * @brief	Header file for the label provider
- * 
- * 
+ *
+ *
  */
 
 #ifndef LABEL_PROVIDER_H
 #define LABEL_PROVIDER_H
 
 /* Include of Arduino Core */
-#include "Arduino.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include "Arduino.h"
 
 /* Pins connected to interrupt buttons */
-#define PIN_BUTTON_1 			14
-#define PIN_BUTTON_2 			32
+#define PIN_BUTTON_1 14
+#define PIN_BUTTON_2 32
 
 enum gasLabel
 {
@@ -63,47 +63,45 @@ enum gasLabel
 /*!
  * @brief : Class library that holds functionality of the label provider
  */
-class labelProvider
-{
-private:
+class labelProvider {
+   private:
 	/* variable for temporarily holding the new set user label */
-    static volatile gasLabel _label;
-    /* variables to store information about the current buttons states */
-    static volatile bool _but1Pressed, _but2Pressed;
-	
+	static volatile gasLabel _label;
+	/* variables to store information about the current buttons states */
+	static volatile bool _but1Pressed, _but2Pressed;
+
 	static QueueHandle_t _queue;
 
-    /*!
+	/*!
 	 * @brief : This function is the interrupt handler of the first button
 	 */
-    static void isrButton1();
+	static void isrButton1();
 
-    /*!
+	/*!
 	 * @brief :  This function is the interrupt handler of the second button
 	 */
-    static void isrButton2();
+	static void isrButton2();
 
-public:
-
-    /*!
+   public:
+	/*!
      * @brief : The constructor of the label_provider class
      *          Creates an instance of the class
      */
-    labelProvider();
-	
+	labelProvider();
+
 	/*!
      * @brief : This function initializes the label provider module
      */
 	void begin();
 
 	/*!
-	 * @brief : This function retrieves the current label. 
-	 * 
+	 * @brief : This function retrieves the current label.
+	 *
      * @param[out] label : reference to the label
-     * 
+     *
      * @return  true if a new label is available else false
 	 */
-    bool getLabel(gasLabel &label);
+	bool getLabel(gasLabel &label);
 };
 
 #endif

@@ -45,11 +45,11 @@
 #include "utils.h"
 #include <math.h>
 
-uint64_t 	utils::_tickMs;
-uint64_t 	utils::_tickOverFlowCnt;
-SdFat		utils::_sd;
+uint64_t    utils::_tickMs;
+uint64_t    utils::_tickOverFlowCnt;
+SdFat       utils::_sd;
 RTC_PCF8523 utils::_rtc;
-char 		utils::_fileSeed[DATA_LOG_FILE_SEED_SIZE];
+char        utils::_fileSeed[DATA_LOG_FILE_SEED_SIZE];
 
 /*!
  * @brief This function creates the random alphanumeric file seed for the log file
@@ -57,11 +57,10 @@ char 		utils::_fileSeed[DATA_LOG_FILE_SEED_SIZE];
 void utils::createFileSeed()
 {
 	/* set up an alphanumeric characters buffer to choose from */
-	const char *letters = "abcdefghijklmnopqrstuvwxyz0123456789";
+	const char* letters = "abcdefghijklmnopqrstuvwxyz0123456789";
 	/* for each character of the file seed, randomly select one from the buffer */
-	for (int seedChar = 0; seedChar < 16; seedChar++)
-	{
-		int randC = random(0, 36);
+	for (int seedChar = 0; seedChar < 16; seedChar++) {
+		int randC           = random(0, 36);
 		_fileSeed[seedChar] = letters[randC];
 	}
 }
@@ -80,30 +79,25 @@ void utils::dateTime(uint16_t* date, uint16_t* time)
 
 /*!
  * @brief This function initializes the module
- */	
+ */
 demoRetCode utils::begin()
 {
 	demoRetCode retCode = EDK_OK;
-	
-	if (!_sd.begin(PIN_SD_CS, SPI_EIGHTH_SPEED))
-	{
+
+	if (!_sd.begin(PIN_SD_CS, SPI_EIGHTH_SPEED)) {
 		retCode = EDK_SD_CARD_INIT_ERROR;
-	}
-	else if (!_rtc.begin())
-	{
+	} else if (!_rtc.begin()) {
 		retCode = EDK_DATALOGGER_RTC_BEGIN_WARNING;
-	}
-	else if (!_rtc.initialized() || _rtc.lostPower())
-	{
-		_rtc.adjust(DateTime(F(__DATE__), F(__TIME__)) - TimeSpan((int32_t)(TIMEZONE * 3600)));
-		
+	} else if (!_rtc.initialized() || _rtc.lostPower()) {
+		_rtc.adjust(DateTime(F(__DATE__), F(__TIME__)) - TimeSpan((int32_t) (TIMEZONE * 3600)));
+
 		retCode = EDK_DATALOGGER_RTC_ADJUST_WARNING;
 	}
 
 	randomSeed(analogRead(0));
-	
+
 	createFileSeed();
-	
+
 	SdFile::dateTimeCallback(dateTime);
 
 	return retCode;
@@ -111,7 +105,7 @@ demoRetCode utils::begin()
 
 /*!
  * @brief This function retrieves the rtc handle
- */	
+ */
 RTC_PCF8523& utils::getRtc()
 {
 	return _rtc;
@@ -119,7 +113,7 @@ RTC_PCF8523& utils::getRtc()
 
 /*!
  * @brief This function retrieves the created file seed
- */	
+ */
 String utils::getFileSeed()
 {
 	return String(_fileSeed);
@@ -130,12 +124,12 @@ String utils::getFileSeed()
  */
 String utils::getMacAddress()
 {
-	uint64_t mac = ESP.getEfuseMac();
-	char *macPtr = (char*)&mac;
-	char macStr[13];
-	
+	uint64_t mac    = ESP.getEfuseMac();
+	char*    macPtr = (char*) &mac;
+	char     macStr[13];
+
 	sprintf(macStr, "%02X%02X%02X%02X%02X%02X", macPtr[0], macPtr[1], macPtr[2], macPtr[3], macPtr[4], macPtr[5]);
-	
+
 	return String(macStr);
 }
 
@@ -144,11 +138,11 @@ String utils::getMacAddress()
  */
 String utils::getDateTime()
 {
-	char timeBuffer[20];
+	char     timeBuffer[20];
 	DateTime date = _rtc.now();
-	
+
 	sprintf(timeBuffer, "%d_%02d_%02d_%02d_%02d", date.year(), date.month(), date.day(), date.hour(), date.minute());
-	
+
 	return String(timeBuffer);
 }
 
@@ -160,23 +154,19 @@ bool utils::getFileWithExtension(String& fName, const String& extension)
 	File root;
 	File file;
 	char fileName[90];
-		
-	if (root.open("/"))
-	{
-		while (file.openNext(&root, O_READ))
-		{
-			if (file.isFile())
-			{
+
+	if (root.open("/")) {
+		while (file.openNext(&root, O_READ)) {
+			if (file.isFile()) {
 				file.getName(fileName, sizeof(fileName));
-				if (String(fileName).endsWith(extension))
-				{
+				if (String(fileName).endsWith(extension)) {
 					file.close();
-					
+
 					fName = String(fileName);
 					return true;
 				}
 			}
-			file.close();  
+			file.close();
 		}
 	}
 	return false;
@@ -188,23 +178,16 @@ bool utils::getFileWithExtension(String& fName, const String& extension)
 demoRetCode utils::getBsecConfig(const String& fileName, uint8_t configStr[BSEC_MAX_PROPERTY_BLOB_SIZE])
 {
 	demoRetCode retCode = EDK_OK;
-	uint32_t configStrLen;
-	
+	uint32_t    configStrLen;
+
 	File configFile;
-	if (!configFile.open(fileName.c_str(), O_RDWR))
-	{
+	if (!configFile.open(fileName.c_str(), O_RDWR)) {
 		retCode = EDK_BSEC_CONFIG_STR_FILE_ERROR;
-	}
-	else if (configFile.read(&configStrLen, sizeof(uint32_t)) != sizeof(uint32_t))
-	{
+	} else if (configFile.read(&configStrLen, sizeof(uint32_t)) != sizeof(uint32_t)) {
 		retCode = EDK_BSEC_CONFIG_STR_READ_ERROR;
-	}
-	else if (configStrLen != BSEC_MAX_PROPERTY_BLOB_SIZE)
-	{
+	} else if (configStrLen != BSEC_MAX_PROPERTY_BLOB_SIZE) {
 		retCode = EDK_BSEC_CONFIG_STR_SIZE_ERROR;
-	}
-	else if (configFile.read(configStr, configStrLen) != configStrLen)
-	{
+	} else if (configFile.read(configStr, configStrLen) != configStrLen) {
 		retCode = EDK_BSEC_CONFIG_STR_READ_ERROR;
 	}
 	return retCode;
@@ -216,8 +199,7 @@ demoRetCode utils::getBsecConfig(const String& fileName, uint8_t configStr[BSEC_
 uint64_t utils::getTickMs(void)
 {
 	uint64_t timeMs = millis(); /* An overflow occurred */
-	if (_tickMs > timeMs) 
-	{ 
+	if (_tickMs > timeMs) {
 		_tickOverFlowCnt++;
 	}
 	_tickMs = timeMs;

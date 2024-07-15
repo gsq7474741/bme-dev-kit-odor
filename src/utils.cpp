@@ -94,7 +94,7 @@ demoRetCode utils::begin()
 		retCode = EDK_DATALOGGER_RTC_ADJUST_WARNING;
 	}
 
-	randomSeed(analogRead(0));
+	randomSeed(esp_random());
 
 	createFileSeed();
 
@@ -204,4 +204,13 @@ uint64_t utils::getTickMs(void)
 	}
 	_tickMs = timeMs;
 	return timeMs + (_tickOverFlowCnt * INT64_C(0xFFFFFFFF));
+}
+uint64_t utils::get_current_rtc_ms(void)
+{
+	return utils::getRtc().now().unixtime() * 1000;
+}
+int utils::set_current_rtc_ms(uint64_t current_ms)
+{
+	utils::getRtc().adjust(DateTime(current_ms / 1000));
+	return 0;
 }

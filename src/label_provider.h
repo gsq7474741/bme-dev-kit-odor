@@ -45,20 +45,31 @@
 /* Include of Arduino Core */
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <string>
 #include "Arduino.h"
 
 /* Pins connected to interrupt buttons */
 #define PIN_BUTTON_1 14
 #define PIN_BUTTON_2 32
 
-enum gasLabel
-{
-	BSEC_NO_CLASS,
-	BSEC_CLASS_1,
-	BSEC_CLASS_2,
-	BSEC_CLASS_3,
-	BSEC_CLASS_4
-};
+//enum gasLabel
+//{
+//	BSEC_NO_CLASS,
+//	BSEC_CLASS_1,
+//	BSEC_CLASS_2,
+//	BSEC_CLASS_3,
+//	BSEC_CLASS_4
+//};
+
+//typedef struct {
+//	int32_t     labelInt;
+//	std::string labelStr;
+//} gas_label_t;
+
+constexpr int32_t gasLabel = 0;
+//std::string labelStr;
+
+//gas_label_t gasLabel;
 
 /*!
  * @brief : Class library that holds functionality of the label provider
@@ -66,7 +77,11 @@ enum gasLabel
 class labelProvider {
    private:
 	/* variable for temporarily holding the new set user label */
-	static volatile gasLabel _label;
+//	static volatile gas_label_t _label;
+//	static volatile gas_label_t _label;
+	static volatile int32_t _labelInt;
+
+	static std::string _labelStr;
 	/* variables to store information about the current buttons states */
 	static volatile bool _but1Pressed, _but2Pressed;
 
@@ -101,7 +116,15 @@ class labelProvider {
      *
      * @return  true if a new label is available else false
 	 */
-	bool getLabel(gasLabel &label);
+	bool getLabelInt(int32_t &label_int);
+
+	bool setLabelInt(int32_t label_int);
+
+	const std:: string& getLabelStr();
+
+	bool setLabelStr(std::string label_str);
+
+
 };
 
 #endif

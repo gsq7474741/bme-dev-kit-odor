@@ -110,6 +110,10 @@ class utils {
 	 */
 	static String getDateTime();
 
+	static uint64_t get_current_rtc_ms(void);
+
+	static int set_current_rtc_ms(uint64_t current_ms);
+
 	/*!
 	 * @brief : This function retrieves the first file with provided file extension
 	 * 

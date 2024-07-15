@@ -90,7 +90,8 @@ class bsecDataLogger {
 		bsecOutputs outputs;
 
 		/*! gas label */
-		gasLabel label;
+//		gasLabel label;
+		int32_t label;
 
 		/*! return code */
 		demoRetCode code;

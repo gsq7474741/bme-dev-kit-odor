@@ -47,7 +47,7 @@
 
 #define FIRMWARE_VERSION "1.5.5"
 
-typedef SdFile File;
+//typedef SdFile File;
 
 /*!
  * @brief Enumeration for demo app mode

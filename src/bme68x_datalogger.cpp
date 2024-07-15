@@ -52,7 +52,7 @@ bme68xDataLogger::bme68xDataLogger() : _fileCounter(0)
 /*!
  * @brief Function to configure the datalogger using the provided sensor config file
  */
-demoRetCode bme68xDataLogger::begin(const String& configName)
+demoRetCode bme68xDataLogger::begin(const std::function<bool(std::deque<data_point_t>)>& flushDataPointDequeCallBack, const String& configName)
 {
 	demoRetCode retCode = utils::begin();
 
@@ -62,6 +62,7 @@ demoRetCode bme68xDataLogger::begin(const String& configName)
 
 		_ss.setf(std::ios::fixed, std::ios::floatfield);
 	}
+	_flushDataPointDequeCallBack =flushDataPointDequeCallBack;
 	return retCode;
 }
 
@@ -89,6 +90,7 @@ demoRetCode bme68xDataLogger::flush()
 			if (logFile.size() >= FILE_SIZE_LIMIT) {
 				retCode = createLogFile();
 			}
+			_flushDataPointDequeCallBack(_dataPointDeque);
 		} else {
 			retCode = EDK_DATALOGGER_LOG_FILE_ERROR;
 		}
@@ -104,12 +106,30 @@ demoRetCode bme68xDataLogger::writeSensorData(
 		const uint32_t*    sensorId,
 		const uint8_t*     sensorMode,
 		const bme68x_data* bme68xData,
-		gasLabel           label,
+		int32_t            label,
 		demoRetCode        code)
 {
 	demoRetCode retCode          = EDK_OK;
 	uint32_t    rtcTsp           = utils::getRtc().now().unixtime();
 	uint32_t    timeSincePowerOn = millis();
+//	static_assert(sizeof(uint64_t)== sizeof(unsigned long));
+
+	data_point_t data_point{
+			(num != nullptr) ? ((int32_t) *num) : -1,
+			((sensorId != nullptr) ? ((uint32_t) *sensorId) : -1),
+			timeSincePowerOn,
+			rtcTsp,
+			(bme68xData != nullptr) ? (bme68xData->temperature) : -1,
+			(bme68xData != nullptr) ? ((bme68xData->pressure * .01f)) : -1,
+			(bme68xData != nullptr) ? (bme68xData->humidity) : -1,
+			(bme68xData != nullptr) ? (bme68xData->gas_resistance) : -1,
+			(bme68xData != nullptr) ? ((int32_t) bme68xData->gas_index) : -1,
+			(sensorMode != nullptr) ? ((int32_t) (*sensorMode == BME68X_PARALLEL_MODE)) : -1,
+			(int32_t) label,
+			(int32_t) code,
+	};
+
+	_dataPointDeque.emplace_back(data_point);
 
 	if (_endOfLine) {
 		_ss << ",\n";

@@ -42,8 +42,12 @@
 /* own header include */
 #include "label_provider.h"
 
-volatile gasLabel labelProvider::_label;
-volatile bool     labelProvider::_but1Pressed, labelProvider::_but2Pressed;
+#include <utility>
+
+volatile int32_t labelProvider::_labelInt = 0;
+std::string      labelProvider::_labelStr;
+
+volatile bool labelProvider::_but1Pressed, labelProvider::_but2Pressed;
 
 QueueHandle_t labelProvider::_queue = nullptr;
 
@@ -68,7 +72,7 @@ void labelProvider::begin()
 	pinMode(PIN_BUTTON_2, INPUT_PULLUP);
 
 	attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_1), isrButton1, CHANGE);
-	attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_2), isrButton2, CHANGE);
+	//	attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_2), isrButton2, CHANGE);
 }
 
 /*!
@@ -80,16 +84,19 @@ void labelProvider::isrButton1()
 	if (_but1Pressed == false) {
 		/* determine if only this button or both are pressed and set helper button label */
 		_but1Pressed = true;
-		if (_but2Pressed) {
-			_label = BSEC_CLASS_3;
-		} else {
-			_label = BSEC_CLASS_1;
-		}
+		//		if (_but2Pressed) {
+		//			_label = BSEC_CLASS_3;
+		//		} else {
+		//			_label = BSEC_CLASS_1;
+		//		}
+		_labelInt = _labelInt + 1;
+		//		_label.labelStr = "";
+		_labelStr = "";
 	} else {
 		/* if both buttons are released, user label according to helper button label */
 		_but1Pressed = false;
 		if (!_but2Pressed) {
-			xQueueSendFromISR(_queue, (const void *) &_label, 0);
+			xQueueSendFromISR(_queue, (const void *) &_labelInt, 0);
 		}
 	}
 }
@@ -103,16 +110,16 @@ void labelProvider::isrButton2()
 	if (_but2Pressed == false) {
 		/* determine if only this button or both are pressed and set helper button label */
 		_but2Pressed = true;
-		if (_but1Pressed) {
-			_label = BSEC_CLASS_3;
-		} else {
-			_label = BSEC_CLASS_2;
-		}
+		//		if (_but1Pressed) {
+		//			_label = BSEC_CLASS_3;
+		//		} else {
+		//			_label = BSEC_CLASS_2;
+		//		}
 	} else {
 		/* if both buttons are released, user label according to helper button label */
 		_but2Pressed = false;
 		if (!_but1Pressed) {
-			xQueueSendFromISR(_queue, (const void *) &_label, 0);
+			xQueueSendFromISR(_queue, (const void *) &_labelInt, 0);
 		}
 	}
 }
@@ -120,7 +127,31 @@ void labelProvider::isrButton2()
 /*!
  * @brief This function retrieves the current label
  */
-bool labelProvider::getLabel(gasLabel &label)
+bool labelProvider::getLabelInt(int32_t &label_int)
 {
-	return xQueueReceive(_queue, &label, 0);
+	return xQueueReceive(_queue, &label_int, 0);
+	//	gas_label_t label_tmp;
+	//	if (xQueueReceive(_queue, &label_tmp, 0)) {
+	//		label_int = label_tmp.labelInt;
+	//		return true;
+	//	} else {
+	//		return false;
+	//	}
+}
+
+bool labelProvider::setLabelInt(int32_t label_int)
+{
+	_labelInt = label_int;
+	return xQueueSend(_queue, (const void *) &_labelInt, 0);
+}
+
+const std::string &labelProvider::getLabelStr()
+{
+	return _labelStr;
+}
+
+bool labelProvider::setLabelStr(std::string label_str)
+{
+	_labelStr = std::move(label_str);
+	return true;
 }

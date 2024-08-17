@@ -54,90 +54,92 @@
 #include "utils.h"
 
 typedef struct {
-//	{
-//		"name": "Sensor Index",
-//		"unit": "",
-//		"format": "integer",
-//		"key": "sensor_index"
-//	},
-int32_t sensor_index;
-//	{
-//		"name": "Sensor ID",
-//		"unit": "",
-//		"format": "integer",
-//		"key": "sensorId"
-//	},
-uint32_t sensorId;
-//	{
-//		"name": "Time Since PowerOn",
-//		"unit": "Milliseconds",
-//		"format": "integer",
-//		"key": "timestamp_since_poweron"
-//	},
-uint32_t timestamp_since_poweron;
-//	{
-//		"name": "Real time clock",
-//		"unit": "Unix Timestamp: seconds since Jan 01 1970. (UTC); 0 = missing",
-//		"format": "integer",
-//		"key": "real_time_clock"
-//	},
-uint32_t real_time_clock;
-//	{
-//		"name": "Temperature",
-//		"unit": "DegreesClecius",
-//		"format": "float",
-//		"key": "temperature"
-//	},
-float temperature;
-//	{
-//		"name": "Pressure",
-//		"unit": "Hectopascals",
-//		"format": "float",
-//		"key": "pressure"
-//	},
-float pressure;
-//	{
-//		"name": "Relative Humidity",
-//		"unit": "Percent",
-//		"format": "float",
-//		"key": "relative_humidity"
-//	},
-float relative_humidity;
-//	{
-//		"name": "Resistance Gassensor",
-//		"unit": "Ohms",
-//		"format": "float",
-//		"key": "resistance_gassensor"
-//	},
-float resistance_gassensor;
-//	{
-//		"name": "Heater Profile Step Index",
-//		"unit": "",
-//		"format": "integer",
-//		"key": "heater_profile_step_index"
-//	},
-int32_t heater_profile_step_index;
-//	{
-//		"name": "Scanning enabled",
-//		"unit": "",
-//		"format": "integer",
-//		"key": "scanning_enabled"
-//	},
-int32_t scanning_enabled;
-//	{
-//		"name": "Label Tag",
-//		"unit": "",
-//		"format": "integer",
-//		"key": "label_tag"
-//	},
-int32_t label_tag;
-//	{
-//		"name": "Error Code",
-//		"unit": "",
-//		"format": "integer",
-//		"key": "error_code"
-//	}
-int32_t error_code;
+	//	{
+	//		"name": "Sensor Index",
+	//		"unit": "",
+	//		"format": "integer",
+	//		"key": "sensor_index"
+	//	},
+	int32_t sensor_index;
+	//	{
+	//		"name": "Sensor ID",
+	//		"unit": "",
+	//		"format": "integer",
+	//		"key": "sensorId"
+	//	},
+	uint32_t sensorId;
+	//	{
+	//		"name": "Time Since PowerOn",
+	//		"unit": "Milliseconds",
+	//		"format": "integer",
+	//		"key": "timestamp_since_poweron"
+	//	},
+	uint32_t timestamp_since_poweron;
+	//	{
+	//		"name": "Real time clock",
+	//		"unit": "Unix Timestamp: seconds since Jan 01 1970. (UTC); 0 = missing",
+	//		"format": "integer",
+	//		"key": "real_time_clock"
+	//	},
+	uint32_t real_time_clock;
+	//	{
+	//		"name": "Temperature",
+	//		"unit": "DegreesClecius",
+	//		"format": "float",
+	//		"key": "temperature"
+	//	},
+	float temperature;
+	//	{
+	//		"name": "Pressure",
+	//		"unit": "Hectopascals",
+	//		"format": "float",
+	//		"key": "pressure"
+	//	},
+	float pressure;
+	//	{
+	//		"name": "Relative Humidity",
+	//		"unit": "Percent",
+	//		"format": "float",
+	//		"key": "relative_humidity"
+	//	},
+	float relative_humidity;
+	//	{
+	//		"name": "Resistance Gassensor",
+	//		"unit": "Ohms",
+	//		"format": "float",
+	//		"key": "resistance_gassensor"
+	//	},
+	float resistance_gassensor;
+	//	{
+	//		"name": "Heater Profile Step Index",
+	//		"unit": "",
+	//		"format": "integer",
+	//		"key": "heater_profile_step_index"
+	//	},
+	int32_t heater_profile_step_index;
+	//	{
+	//		"name": "Scanning enabled",
+	//		"unit": "",
+	//		"format": "integer",
+	//		"key": "scanning_enabled"
+	//	},
+	int32_t scanning_enabled;
+	//	{
+	//		"name": "Label Tag",
+	//		"unit": "",
+	//		"format": "integer",
+	//		"key": "label_tag"
+	//	},
+	int32_t label_tag;
+	//	{
+	//		"name": "Error Code",
+	//		"unit": "",
+	//		"format": "integer",
+	//		"key": "error_code"
+	//	}
+	int32_t error_code;
+
+	std::string label_str;
 } data_point_t;
 
 /*!
@@ -145,13 +147,13 @@ int32_t error_code;
  */
 class bme68xDataLogger {
    private:
-	String            _configName, _logFileName;
-	std::stringstream _ss;
-	std::deque<data_point_t> _dataPointDeque;
+	String                                        _configName, _logFileName;
+	std::stringstream                             _ss;
+	std::deque<data_point_t>                      _dataPointDeque;
 	std::function<bool(std::deque<data_point_t>)> _flushDataPointDequeCallBack;
-	unsigned long     _sensorDataPos = 0;
-	int               _fileCounter   = 0;
-	bool              _endOfLine     = false;
+	unsigned long                                 _sensorDataPos = 0;
+	int                                           _fileCounter   = 0;
+	bool                                          _endOfLine     = false;
 
 	/*!
 	 * @brief : This function creates a bme68x datalogger output file with .bmerawdata extension
@@ -190,7 +192,7 @@ class bme68xDataLogger {
 	 * @param[in] sensorId 	: pointer to sensor id, if NULL a null json object is inserted
 	 * @param[in] sensorMode: pointer to sensor operation mode, if NULL a null json object is inserted
 	 * @param[in] bme68xData: pointer to bbme68x data, if NULL a null json object is inserted
-	 * @param[in] label 	: class label
+	 * @param[in] labelInt 	: class label
 	 * @param[in] code 		: application return code
      * 
      * @return  bosch error code
@@ -200,7 +202,8 @@ class bme68xDataLogger {
 			const uint32_t*    sensorId,
 			const uint8_t*     sensorMode,
 			const bme68x_data* bme68xData,
-			int32_t            label,
+			int32_t            labelInt,
+			std::string       labelStr,
 			demoRetCode        code);
 };
 

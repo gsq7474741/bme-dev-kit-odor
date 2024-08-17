@@ -120,7 +120,7 @@ class labelProvider {
 
 	bool setLabelInt(int32_t label_int);
 
-	const std:: string& getLabelStr();
+	const std::string& getLabelStr();
 
 	bool setLabelStr(std::string label_str);
 

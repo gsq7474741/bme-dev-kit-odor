@@ -57,8 +57,8 @@
 //#include "ble_controller.h"
 //#include <AliyunIoTSDK.h>
 #include <bsec2.h>
-#include "ALink.h"
 #include <ctime>
+#include "ALink.h"
 #include "Arduino.h"
 #include "WiFi.h"
 #include "utils.h"
@@ -66,8 +66,8 @@
 /*! BUFF_SIZE determines the size of the buffer */
 #define BUFF_SIZE 10
 
-const char *ssid     = "\xE6\xA1\x83\xE6\xA1\x83\xE5\xAE\xB6";
-const char *password = "gsq7474741";
+const char* ssid     = "\xE6\xA1\x83\xE6\xA1\x83\xE5\xAE\xB6";
+const char* password = "gsq7474741";
 
 const char* product_key   = "ia66IJPQ9sR";
 const char* device_name   = "test1";
@@ -178,7 +178,7 @@ demoRetCode configureSensorLogging(const String& bmeExtension);
  */
 //demoRetCode configureBsecLogging(const String& bsecExtension, uint8_t bsecConfigStr[BSEC_MAX_PROPERTY_BLOB_SIZE]);
 
-bool is_streaming=false;
+bool is_streaming = true;
 bool alyStreaming_cb(JsonVariant p);
 bool alyLabelStr_cb(JsonVariant p);
 bool alyLabelInt_cb(JsonVariant p);
@@ -202,19 +202,21 @@ ledController    ledCtlr;
 sensorManager    sensorMgr;
 bme68xDataLogger bme68xDlog;
 //bsecDataLogger   bsecDlog;
-demoRetCode      retCode;
-uint8_t          bsecSelectedSensor;
-String           bme68xConfigFile, bsecConfigFile;
-demoAppMode      appMode;
+demoRetCode retCode;
+uint8_t     bsecSelectedSensor;
+String      bme68xConfigFile, bsecConfigFile;
+demoAppMode appMode;
 //gasLabel         label;
-int32_t label;
-bool    isBme68xConfAvailable, isBsecConfAvailable;
-commMux comm;
+int32_t     label_int;
+std::string label_str;
+bool        isBme68xConfAvailable, isBsecConfAvailable;
+commMux     comm;
 //AliyunIoTSDK     iot;
 WiFiClient espClient;
 
-static volatile uint8_t             buffCount = 0;
+static volatile uint8_t buffCount = 0;
 //static bsecDataLogger::SensorIoData buff[BUFF_SIZE];
+uint64_t lastMsMain = 0;
 
 void setup()
 {
@@ -222,23 +224,24 @@ void setup()
 	/* Datalogger Mode is set by default */
 	appMode = DEMO_DATALOGGER_MODE;
 	//	label              = BSEC_NO_CLASS;
-	label              = 0;
+	label_int          = 0;
+	label_str          = "undefined";
 	bsecSelectedSensor = 0;
 
 	//Init WiFi as Station, start SmartConfig
 	WiFi.mode(WIFI_AP_STA);
-//	WiFi.beginSmartConfig();
-	WiFi.begin(ssid,password);
+	//	WiFi.beginSmartConfig();
+	WiFi.begin(ssid, password);
 
 	//Wait for SmartConfig packet from mobile
-//	Serial.println("Waiting for SmartConfig.");
-//	while (!WiFi.smartConfigDone()) {
-//		delay(500);
-//		Serial.print(".");
-//	}
-//
-//	Serial.println("");
-//	Serial.println("SmartConfig received.");
+	//	Serial.println("Waiting for SmartConfig.");
+	//	while (!WiFi.smartConfigDone()) {
+	//		delay(500);
+	//		Serial.print(".");
+	//	}
+	//
+	//	Serial.println("");
+	//	Serial.println("SmartConfig received.");
 
 	//Wait for WiFi to connect to AP
 	Serial.println("Waiting for WiFi");
@@ -276,11 +279,6 @@ void setup()
 		/* initialize the ble controller */
 		//        retCode = bleCtlr.begin();
 
-
-		//		AliyunIoTSDK::begin(espClient, PRODUCT_KEY, DEVICE_NAME, DEVICE_SECRET, REGION_ID);
-		//		AliyunIoTSDK::ntpRequest(utils::get_current_rtc_ms,utils::set_current_rtc_ms)
-
-
 		//		bleController::bleCmd bleController::cmdList[] = {
 		//				{  "setlabel",       &bleController::parseCmdSetLabel,       bleController::SET_LABEL},
 		//				{  "getlabel",       &bleController::parseCmdGetLabel,       bleController::GET_LABEL},
@@ -289,23 +287,12 @@ void setup()
 		//				{     "start", &bleController::parseCmdStartStreaming, bleController::START_STREAMING},
 		//				{      "stop",  &bleController::parseCmdStopStreaming,  bleController::STOP_STREAMING},
 		//		};
-		// 绑定属性回调
-		//		AliyunIoTSDK::bindData("PowerSwitch", aliyunPowerCallback);
-		//		AliyunIoTSDK::bindData("setlabel", alySetLabel_cb);
-		//		AliyunIoTSDK::bindData("getlabel", alyGetLabel_cb);
-		//		AliyunIoTSDK::bindData("setrtctime", alySetRtcTime_cb);
-		//		AliyunIoTSDK::bindData("getrtctime", alyGetRtcTime_cb);
-		//		AliyunIoTSDK::bindData("start", alyStartStreaming_cb);
-		//		AliyunIoTSDK::bindData("stop", alyStopStreaming_cb);
 
-		//		AliyunIoTSDK::bindData("is_streaming", alyStreaming_cb);
-		//		AliyunIoTSDK::bindData("label_str", alyLabelStr_cb);
-		//		AliyunIoTSDK::bindData("label_tag", alyLabelTag_cb);
-		//		AliyunIoTSDK::bindData("real_time_clock", alyRTC_cb);
 
 		ALink::begin(product_key, device_name, device_secret, instance_id);
 		ALink::beginNTP(ntpCallBack, 8);
 		ALink::requestNTP();
+		utils::setPowerOnUnixMs(utils::get_current_rtc_ms() - utils::getTickMs());
 
 		ALink::registerPropertySet("is_streaming", (std::function<bool(JsonVariant)>){alyStreaming_cb});
 		ALink::registerPropertySet("label_int", (std::function<bool(JsonVariant)>){alyLabelInt_cb});
@@ -321,7 +308,7 @@ void setup()
 			/* creates log file and updates the error codes */
 			if (bme68xDlog.begin(std::function<bool(std::deque<data_point_t>)>(), bme68xConfigFile) != EDK_SD_CARD_INIT_ERROR)
 				/* Writes the sensor data to the current log file */
-				(void) bme68xDlog.writeSensorData(nullptr, nullptr, nullptr, nullptr, label, retCode);
+				(void) bme68xDlog.writeSensorData(nullptr, nullptr, nullptr, nullptr, label_int, label_str, retCode);
 			/* Flushes the buffered sensor data to the current log file */
 			(void) bme68xDlog.flush();
 		}
@@ -332,18 +319,26 @@ void setup()
 
 void loop()
 {
+	//	DEBUG_PRINT_LINE("Free Heap: %lu",esp_get_free_heap_size());
 	/* Updates the LED controller status */
 	ledCtlr.update(retCode);
 	if (retCode >= EDK_OK) {
 		//        while (bleCtlr.dequeueBleMsg());
 
 		/* Retrieves the current label */
-		(void) labelPvr.getLabelInt(label);
+		(void) labelPvr.getLabelInt(label_int);
+		label_str = labelPvr.getLabelStr();
 
 		switch (appMode) {
 			/*  Logs the bme688 sensors raw data from all 8 sensors */
 			case DEMO_DATALOGGER_MODE: {
 				//				AliyunIoTSDK::loop();
+				if (utils::getTickMs() - lastMsMain >= 5000) {
+					lastMsMain = utils::getTickMs();
+					ALink::sendPropertyPost<bool>("is_streaming", is_streaming);
+					ALink::sendPropertyPost<int32_t>("label_int", label_int);
+					ALink::sendPropertyPost<std::string>("label_str", label_str);
+				}
 				uint8_t i;
 
 				/* Schedules the next readable sensor */
@@ -356,11 +351,11 @@ void loop()
 					retCode = sensorMgr.collectData(i, sensorData);
 					if (retCode < EDK_OK) {
 						/* Writes the sensor data to the current log file */
-						retCode = bme68xDlog.writeSensorData(&i, &sensor->id, &sensor->mode, nullptr, label, retCode);
+						retCode = bme68xDlog.writeSensorData(&i, &sensor->id, &sensor->mode, nullptr, label_int, label_str, retCode);
 					} else {
 						for (const auto data: sensorData) {
 							if (data != nullptr) {
-								retCode = bme68xDlog.writeSensorData(&i, &sensor->id, &sensor->mode, data, label, retCode);
+								retCode = bme68xDlog.writeSensorData(&i, &sensor->id, &sensor->mode, data, label_int, label_str, retCode);
 							}
 						}
 					}
@@ -398,21 +393,21 @@ void bsecCallBack(const bme68x_data input, const bsecOutputs outputs, Bsec2 bsec
 	bme68xSensor* sensor = sensorMgr.getSensor(bsecSelectedSensor); /* returns the selected sensor address */
 
 	if (sensor != nullptr) {
-//		buff[buffCount].sensorNum        = bsecSelectedSensor;
-//		buff[buffCount].sensorId         = sensor->id;
-//		buff[buffCount].sensorMode       = sensor->mode;
-//		buff[buffCount].inputData        = input;
-//		buff[buffCount].outputs          = outputs;
-//		buff[buffCount].label            = label;
-//		buff[buffCount].code             = retCode;
-//		buff[buffCount].timeSincePowerOn = millis();
-//		buff[buffCount].rtcTsp           = utils::getRtc().now().unixtime();
-//		buffCount++;
-//
-//		if (buffCount == BUFF_SIZE) {
-//			retCode   = bsecDlog.writeBsecOutput(buff, BUFF_SIZE);
-//			buffCount = 0;
-//		}
+		//		buff[buffCount].sensorNum        = bsecSelectedSensor;
+		//		buff[buffCount].sensorId         = sensor->id;
+		//		buff[buffCount].sensorMode       = sensor->mode;
+		//		buff[buffCount].inputData        = input;
+		//		buff[buffCount].outputs          = outputs;
+		//		buff[buffCount].label            = label;
+		//		buff[buffCount].code             = retCode;
+		//		buff[buffCount].timeSincePowerOn = millis();
+		//		buff[buffCount].rtcTsp           = utils::getRtc().now().unixtime();
+		//		buffCount++;
+		//
+		//		if (buffCount == BUFF_SIZE) {
+		//			retCode   = bsecDlog.writeBsecOutput(buff, BUFF_SIZE);
+		//			buffCount = 0;
+		//		}
 
 
 		//		if (millis() - lastMsMain >= 5000) {
@@ -899,156 +894,14 @@ void ntpCallBack(const aiot_ntp_recv_t* recv)
 }
 
 
-/*
- * [
-{
-  "identifier": "sensor_index",
-  "name": "sensor_index",
-  "dataType": {
-	"type": "int",
-	"specs": {
-	  "min": "-2147483648",
-	  "max": "2147483647",
-	  "step": "1"
-	}
-  }
-},
-{
-  "identifier": "sensorId",
-  "name": "sensorId",
-  "dataType": {
-	"type": "int",
-	"specs": {
-	  "min": "-2147483648",
-	  "max": "2147483647",
-	  "step": "1"
-	}
-  }
-},
-{
-  "identifier": "timestamp_since_poweron",
-  "name": "timestamp_since_poweron",
-  "dataType": {
-	"type": "date",
-	"specs": {}
-  }
-},
-{
-  "identifier": "real_time_clock",
-  "name": "real_time_clock",
-  "dataType": {
-	"type": "date",
-	"specs": {}
-  }
-},
-{
-  "identifier": "temperature",
-  "name": "temperature",
-  "dataType": {
-	"type": "float",
-	"specs": {
-	  "min": "-1.4E-45",
-	  "max": "3.4028235E38",
-	  "step": "0.1"
-	}
-  }
-},
-{
-  "identifier": "pressure",
-  "name": "pressure",
-  "dataType": {
-	"type": "float",
-	"specs": {
-	  "min": "-1.4E-45",
-	  "max": "3.4028235E38",
-	  "step": "0.1"
-	}
-  }
-},
-{
-  "identifier": "relative_humidity",
-  "name": "relative_humidity",
-  "dataType": {
-	"type": "float",
-	"specs": {
-	  "min": "-1.4E-45",
-	  "max": "3.4028235E38",
-	  "step": "0.1"
-	}
-  }
-},
-{
-  "identifier": "resistance_gassensor",
-  "name": "resistance_gassensor",
-  "dataType": {
-	"type": "float",
-	"specs": {
-	  "min": "-1.4E-45",
-	  "max": "3.4028235E38",
-	  "step": "0.1"
-	}
-  }
-},
-{
-  "identifier": "heater_profile_step_index",
-  "name": "heater_profile_step_index",
-  "dataType": {
-	"type": "int",
-	"specs": {
-	  "min": "-2147483648",
-	  "max": "2147483647",
-	  "step": "1"
-	}
-  }
-},
-{
-  "identifier": "scanning_enabled",
-  "name": "scanning_enabled",
-  "dataType": {
-	"type": "int",
-	"specs": {
-	  "min": "-2147483648",
-	  "max": "2147483647",
-	  "step": "1"
-	}
-  }
-},
-{
-  "identifier": "label_tag",
-  "name": "label_tag",
-  "dataType": {
-	"type": "int",
-	"specs": {
-	  "min": "-2147483648",
-	  "max": "2147483647",
-	  "step": "1"
-	}
-  }
-},
-{
-  "identifier": "error_code",
-  "name": "error_code",
-  "dataType": {
-	"type": "int",
-	"specs": {
-	  "min": "-2147483648",
-	  "max": "2147483647",
-	  "step": "1"
-	}
-  }
-}
-]
- *
- * */
-
 bool dataBatchPostCallBack(const std::deque<data_point_t>& dq)
 {
-	constexpr auto                                                                 a = sizeof(data_point_t);
-	std::list<std::tuple<std::string, std::list<std::tuple<std::string, time_t>>>> props;
-	std::list<std::tuple<std::string, time_t>>                                     batch;
+	constexpr auto                                                                   a = sizeof(data_point_t);
+	std::list<std::tuple<std::string, std::list<std::tuple<std::string, uint64_t>>>> props;
+	std::list<std::tuple<std::string, uint64_t>>                                     batch;
 	for (const auto& data_point: dq) {
 		std::string             jsonBuf;
-		StaticJsonDocument<200> doc;
+		StaticJsonDocument<500> doc;
 		doc["sensor_index"]              = data_point.sensor_index;
 		doc["sensorId"]                  = data_point.sensorId;
 		doc["timestamp_since_poweron"]   = data_point.timestamp_since_poweron;
@@ -1061,12 +914,14 @@ bool dataBatchPostCallBack(const std::deque<data_point_t>& dq)
 		doc["scanning_enabled"]          = data_point.scanning_enabled;
 		doc["label_tag"]                 = data_point.label_tag;
 		doc["error_code"]                = data_point.error_code;
+		doc["label_str"]                 = data_point.label_str;
+//		printf("prtlabel_str: %s\n", data_point.label_str.c_str());
 		serializeJson(doc, jsonBuf);
-		batch.emplace_back(jsonBuf, data_point.real_time_clock);
+		batch.emplace_back(jsonBuf, data_point.timestamp_since_poweron + utils::getPowerOnUnixMs());
 	}
 	props.emplace_back("data_point", batch);
 
 	ALink::sendPropertyBatchPost<std::string>(props);
-//	ALink::sendPropertyPostTest("test", 2);
+	//	ALink::sendPropertyPostTest("test", 2);
 	return true;
 }

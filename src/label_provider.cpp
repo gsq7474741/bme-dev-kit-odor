@@ -45,7 +45,7 @@
 #include <utility>
 
 volatile int32_t labelProvider::_labelInt = 0;
-std::string      labelProvider::_labelStr;
+std::string      labelProvider::_labelStr = "undefined";
 
 volatile bool labelProvider::_but1Pressed, labelProvider::_but2Pressed;
 

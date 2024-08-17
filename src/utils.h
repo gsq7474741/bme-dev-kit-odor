@@ -63,7 +63,13 @@ class utils {
 	static SdFat       _sd;
 	static RTC_PCF8523 _rtc;
 	static char        _fileSeed[DATA_LOG_FILE_SEED_SIZE];
+	static uint64_t _powerOnUnixMs;
 
+   public:
+	static uint64_t getPowerOnUnixMs();
+	static void     setPowerOnUnixMs(uint64_t powerOnUnixMs);
+
+   private:
 	/*!
 	 * @brief : This function creates the random alphanumeric file seed for the log file
 	 */
@@ -111,6 +117,7 @@ class utils {
 	static String getDateTime();
 
 	static uint64_t get_current_rtc_ms(void);
+	static uint64_t set_current_rtc_ms(void);
 
 	static int set_current_rtc_ms(uint64_t current_ms);
 

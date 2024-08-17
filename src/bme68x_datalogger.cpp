@@ -43,6 +43,8 @@
 #include "bme68x_datalogger.h"
 #include <Esp.h>
 
+#include <utility>
+
 /*!
  * @brief The constructor of the bme68xDataLogger class
  */
@@ -52,7 +54,8 @@ bme68xDataLogger::bme68xDataLogger() : _fileCounter(0)
 /*!
  * @brief Function to configure the datalogger using the provided sensor config file
  */
-demoRetCode bme68xDataLogger::begin(const std::function<bool(std::deque<data_point_t>)>& flushDataPointDequeCallBack, const String& configName)
+demoRetCode bme68xDataLogger::begin(
+		const std::function<bool(std::deque<data_point_t>)>& flushDataPointDequeCallBack, const String& configName)
 {
 	demoRetCode retCode = utils::begin();
 
@@ -62,7 +65,7 @@ demoRetCode bme68xDataLogger::begin(const std::function<bool(std::deque<data_poi
 
 		_ss.setf(std::ios::fixed, std::ios::floatfield);
 	}
-	_flushDataPointDequeCallBack =flushDataPointDequeCallBack;
+	_flushDataPointDequeCallBack = flushDataPointDequeCallBack;
 	return retCode;
 }
 
@@ -91,6 +94,8 @@ demoRetCode bme68xDataLogger::flush()
 				retCode = createLogFile();
 			}
 			_flushDataPointDequeCallBack(_dataPointDeque);
+			_dataPointDeque.clear();
+
 		} else {
 			retCode = EDK_DATALOGGER_LOG_FILE_ERROR;
 		}
@@ -106,13 +111,14 @@ demoRetCode bme68xDataLogger::writeSensorData(
 		const uint32_t*    sensorId,
 		const uint8_t*     sensorMode,
 		const bme68x_data* bme68xData,
-		int32_t            label,
+		int32_t            labelInt,
+		std::string       labelStr,
 		demoRetCode        code)
 {
 	demoRetCode retCode          = EDK_OK;
 	uint32_t    rtcTsp           = utils::getRtc().now().unixtime();
-	uint32_t    timeSincePowerOn = millis();
-//	static_assert(sizeof(uint64_t)== sizeof(unsigned long));
+	uint32_t    timeSincePowerOn = utils::getTickMs();
+	//	static_assert(sizeof(uint64_t)== sizeof(unsigned long));
 
 	data_point_t data_point{
 			(num != nullptr) ? ((int32_t) *num) : -1,
@@ -125,8 +131,9 @@ demoRetCode bme68xDataLogger::writeSensorData(
 			(bme68xData != nullptr) ? (bme68xData->gas_resistance) : -1,
 			(bme68xData != nullptr) ? ((int32_t) bme68xData->gas_index) : -1,
 			(sensorMode != nullptr) ? ((int32_t) (*sensorMode == BME68X_PARALLEL_MODE)) : -1,
-			(int32_t) label,
+			(int32_t) labelInt,
 			(int32_t) code,
+			std::move(labelStr)
 	};
 
 	_dataPointDeque.emplace_back(data_point);
@@ -155,7 +162,7 @@ demoRetCode bme68xDataLogger::writeSensorData(
 	_ss << ",";
 	(sensorMode != nullptr) ? (_ss << (int) (*sensorMode == BME68X_PARALLEL_MODE)) : (_ss << "null");
 	_ss << ",";
-	_ss << (int) label;
+	_ss << (int) labelInt;
 	_ss << ",";
 	_ss << (int) code;
 	_ss << "]";

@@ -50,6 +50,7 @@ uint64_t    utils::_tickOverFlowCnt;
 SdFat       utils::_sd;
 RTC_PCF8523 utils::_rtc;
 char        utils::_fileSeed[DATA_LOG_FILE_SEED_SIZE];
+uint64_t    utils::_powerOnUnixMs = 0;
 
 /*!
  * @brief This function creates the random alphanumeric file seed for the log file
@@ -93,6 +94,7 @@ demoRetCode utils::begin()
 
 		retCode = EDK_DATALOGGER_RTC_ADJUST_WARNING;
 	}
+
 
 	randomSeed(esp_random());
 
@@ -205,12 +207,26 @@ uint64_t utils::getTickMs(void)
 	_tickMs = timeMs;
 	return timeMs + (_tickOverFlowCnt * INT64_C(0xFFFFFFFF));
 }
+
+uint64_t multiply_by_1000(uint64_t x)
+{
+	return (x << 10) - (x << 5) - (x << 4);
+}
+
 uint64_t utils::get_current_rtc_ms(void)
 {
-	return utils::getRtc().now().unixtime() * 1000;
+		return static_cast<uint64_t>(utils::getRtc().now().unixtime()) * 1000;
 }
 int utils::set_current_rtc_ms(uint64_t current_ms)
 {
 	utils::getRtc().adjust(DateTime(current_ms / 1000));
 	return 0;
+}
+uint64_t utils::getPowerOnUnixMs()
+{
+	return _powerOnUnixMs;
+}
+void utils::setPowerOnUnixMs(uint64_t powerOnUnixMs)
+{
+	_powerOnUnixMs = powerOnUnixMs;
 }

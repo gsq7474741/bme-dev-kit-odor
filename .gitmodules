@@ -1,0 +1,6 @@
+[submodule "lib/LinkSDK"]
+	path = lib/LinkSDK
+	url = https://github.com/gsq7474741/LinkSDK-CXX.git
+[submodule "lib/libdeflate"]
+	path = lib/libdeflate
+	url = https://github.com/gsq7474741/libdeflate-me.git

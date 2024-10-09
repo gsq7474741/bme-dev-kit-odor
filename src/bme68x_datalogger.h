@@ -139,7 +139,8 @@ typedef struct {
 	//	}
 	int32_t error_code;
 
-	std::string label_str;
+    int32_t sample_int;
+//	std::string label_str;
 } data_point_t;
 
 /*!
@@ -203,7 +204,8 @@ class bme68xDataLogger {
 			const uint8_t*     sensorMode,
 			const bme68x_data* bme68xData,
 			int32_t            labelInt,
-			std::string       labelStr,
+			int32_t            sampleInt,
+//			std::string       labelStr,
 			demoRetCode        code);
 };
 

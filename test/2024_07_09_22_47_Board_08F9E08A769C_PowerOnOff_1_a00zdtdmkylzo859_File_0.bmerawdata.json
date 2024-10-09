@@ -4,7 +4,7 @@
     "appVersion": "2.3.2",
     "boardType": "board_8",
     "boardMode": "burn_in",
-    "boardLayout": "grouped"
+    "boardLayout": "grouped*"
   },
   "configBody": {
     "heaterProfiles": [

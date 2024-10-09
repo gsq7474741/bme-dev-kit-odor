@@ -112,7 +112,8 @@ demoRetCode bme68xDataLogger::writeSensorData(
 		const uint8_t*     sensorMode,
 		const bme68x_data* bme68xData,
 		int32_t            labelInt,
-		std::string       labelStr,
+		int32_t            sampleInt,
+//		std::string       labelStr,
 		demoRetCode        code)
 {
 	demoRetCode retCode          = EDK_OK;
@@ -133,7 +134,8 @@ demoRetCode bme68xDataLogger::writeSensorData(
 			(sensorMode != nullptr) ? ((int32_t) (*sensorMode == BME68X_PARALLEL_MODE)) : -1,
 			(int32_t) labelInt,
 			(int32_t) code,
-			std::move(labelStr)
+//			std::move(labelStr)
+            (int32_t) sampleInt
 	};
 
 	_dataPointDeque.emplace_back(data_point);

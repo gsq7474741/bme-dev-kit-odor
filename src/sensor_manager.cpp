@@ -163,7 +163,7 @@ demoRetCode sensorManager::begin(const String& configName)
 	commMuxBegin(Wire, SPI);
 	/* Communication interface set for all the 8 sensors in the development kit */
 	for (uint8_t i = 0; i < NUM_BME68X_UNITS; i++) {
-		commSetup[i] = commMuxSetConfig(Wire, SPI, i, commSetup[i]);
+		commSetup[i] = commMuxSetConfig(Wire, SPI, i    , commSetup[i]);
 	}
 
 	/* open config file */
